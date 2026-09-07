@@ -5,22 +5,23 @@ import FeedPage from '@/pages/FeedPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import ProfilePage from '@/pages/ProfilePage'
 import FriendRequestsPage from '@/pages/FriendRequestsPage'
-
 import SearchPage from '@/pages/SearchPage'
+import OnboardingPage from '@/pages/OnboardingPage'
+import ChatPage from '@/pages/ChatPage'
 
 // --------------------------------------------------------------------------
 // App — the router shell.
 //
 // Route map:
-//  /signup   → public  → create an account
-//  /login    → public  → sign in
-//  /feed     → private → friends-only feed (wrapped in ProtectedRoute)
-//  /friends  → private → friend requests & friends list (wrapped in ProtectedRoute)
-//  /search   → private → zero-tracking user search (wrapped in ProtectedRoute)
-//  /profile/:userId → private → profile page (wrapped in ProtectedRoute)
-//  /         → redirect to /feed (which bounces to /login if not authed)
-//
-// AuthProvider lives in main.jsx so it wraps the entire router.
+//  /signup      → public  → create an account
+//  /login       → public  → sign in
+//  /onboarding  → private → set avatar & bio for new accounts (wrapped in ProtectedRoute)
+//  /feed        → private → friends-only feed (wrapped in ProtectedRoute)
+//  /friends     → private → friend requests & friends list (wrapped in ProtectedRoute)
+//  /search      → private → zero-tracking user search (wrapped in ProtectedRoute)
+//  /:username   → private → user profile route by username e.g. /parcomohsen (wrapped in ProtectedRoute)
+//  /profile/:userId → private → backward compatible profile route (wrapped in ProtectedRoute)
+//  /            → redirect to /feed (which bounces to /login or /onboarding if needed)
 // --------------------------------------------------------------------------
 
 export default function App() {
@@ -29,6 +30,14 @@ export default function App() {
       <Routes>
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/feed"
           element={
@@ -58,6 +67,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/:username"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route 
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
             </ProtectedRoute>
           }
         />

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import CirvyLogo from './CirvyLogo'
 
 export default function SidebarLeft() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { t } = useUI()
   const [friends, setFriends] = useState([])
 
@@ -39,7 +39,8 @@ export default function SidebarLeft() {
     }
   }
 
-  const profilePath = user ? `/profile/${user.id}` : '/login'
+  const currentHandle = profile?.username || user?.user_metadata?.username
+  const profilePath = currentHandle ? `/${currentHandle}` : (user ? `/profile/${user.id}` : '/login')
 
   const navItems = [
     { to: '/feed', icon: 'fa-solid fa-house', label: t('navFeed') || 'Home' },
@@ -102,8 +103,10 @@ export default function SidebarLeft() {
           <p className="text-xs text-[#677A85]">No friends yet.</p>
         ) : (
           <div className="space-y-3">
-            {friends.map(friend => (
-              <NavLink to={`/profile/${friend.id}`} key={friend.id} className="flex items-center gap-3 group">
+            {friends.map(friend => {
+              const friendPath = friend.username ? `/${friend.username}` : `/${friend.id}`
+              return (
+              <NavLink to={friendPath} key={friend.id} className="flex items-center gap-3 group">
                 <img 
                   src={friend.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.display_name || 'U')}&background=4A7A8C&color=fff`}
                   alt=""
@@ -115,7 +118,7 @@ export default function SidebarLeft() {
                   </p>
                 </div>
               </NavLink>
-            ))}
+            )})}
           </div>
         )}
       </div>

@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { supabase } from '@/lib/supabase'
 import FriendButton from '../components/FriendButton'
 import AppShell from '@/components/AppShell'
 import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { Camera, Image, X } from 'lucide-react'
+import { usePresence } from '@/contexts/PresenceContext'
+import { Camera, Image, X, Heart, MessageSquare, Send } from 'lucide-react'
 
 export default function ProfilePage() {
-  const { userId } = useParams()
-  const { t, showToast, ghostMode, setShowSettings } = useUI()
+  const { userId, username } = useParams()
+  const { t, showToast, setShowSettings } = useUI()
   const { signOut } = useAuth()
+  const { isOnline } = usePresence()
   const navigate = useNavigate()
 
   const [profile, setProfile] = useState(null)
@@ -18,8 +20,18 @@ export default function ProfilePage() {
   const [currentUserId, setCurrentUserId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [friendCount, setFriendCount] = useState(0)
+  const [mutualFriendCount, setMutualFriendCount] = useState(0)
   const [postCount, setPostCount] = useState(0)
   const [posts, setPosts] = useState([])
+
+  // Post detail modal state
+  const [selectedPost, setSelectedPost] = useState(null)
+  const [selectedPostLiked, setSelectedPostLiked] = useState(false)
+  const [selectedPostLikeCount, setSelectedPostLikeCount] = useState(0)
+  const [selectedPostComments, setSelectedPostComments] = useState([])
+  const [loadingComments, setLoadingComments] = useState(false)
+  const [commentInput, setCommentInput] = useState('')
+  const [submittingComment, setSubmittingComment] = useState(false)
 
   // Edit Bio modal state
   const [showEditBio, setShowEditBio] = useState(false)
@@ -28,6 +40,9 @@ export default function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState('')
   const [avatarError, setAvatarError] = useState('')
+
+  const rawParam = username || userId || ''
+  const userIsOnline = profile ? isOnline(profile.id) : false
 
   useEffect(() => {
     if (!avatarFile) {
@@ -51,15 +66,47 @@ export default function ProfilePage() {
       if (!user) return
       setCurrentUserId(user.id)
 
-      const friends = user.id === userId
+      if (!rawParam) {
+        setProfile(null)
+        setLoading(false)
+        return
+      }
 
-      let isFr = friends
-      if (!friends) {
+      // Check if param is UUID or username
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        rawParam
+      )
+      const cleanParam = rawParam.toLowerCase().replace(/^@/, '')
+
+      // 1) Find the target user profile row
+      let targetUserQuery = supabase.from('profiles')
+      if (isUuid) {
+        targetUserQuery = targetUserQuery.select('id, username').eq('id', rawParam).maybeSingle()
+      } else {
+        targetUserQuery = targetUserQuery
+          .select('id, username')
+          .ilike('username', cleanParam)
+          .maybeSingle()
+      }
+
+      const { data: baseProfile } = await targetUserQuery
+      if (!baseProfile) {
+        setProfile(null)
+        setLoading(false)
+        return
+      }
+
+      const targetId = baseProfile.id
+      const isOwn = user.id === targetId
+
+      // 2) Check friendship status
+      let isFr = isOwn
+      if (!isOwn) {
         const { data: friendship } = await supabase
           .from('friendships')
           .select('status')
           .or(
-            `and(requester_id.eq.${user.id},addressee_id.eq.${userId}),and(requester_id.eq.${userId},addressee_id.eq.${user.id})`
+            `and(requester_id.eq.${user.id},addressee_id.eq.${targetId}),and(requester_id.eq.${targetId},addressee_id.eq.${user.id})`
           )
           .eq('status', 'accepted')
           .maybeSingle()
@@ -67,47 +114,164 @@ export default function ProfilePage() {
       }
       setIsFriend(isFr)
 
+      // 3) Fetch profile columns (privacy enforcement: bio only for friends)
       const columns = isFr
         ? 'id, username, display_name, avatar_url, bio, created_at'
         : 'id, username, display_name, avatar_url'
 
-      const { data } = await supabase
+      const { data: fullProfile } = await supabase
         .from('profiles')
         .select(columns)
-        .eq('id', userId)
+        .eq('id', targetId)
         .single()
 
-      setProfile(data)
-      if (data?.bio) setBioInput(data.bio)
+      setProfile(fullProfile)
+      if (fullProfile?.bio) setBioInput(fullProfile.bio)
 
-      const { count: fCount } = await supabase
+      // Total friends count for this profile
+      const { data: profileFriendships } = await supabase
         .from('friendships')
-        .select('*', { count: 'exact', head: true })
-        .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+        .select('requester_id, addressee_id')
+        .or(`requester_id.eq.${targetId},addressee_id.eq.${targetId}`)
         .eq('status', 'accepted')
-      setFriendCount(fCount || 0)
+
+      const profileFriendIds = (profileFriendships || []).map((f) =>
+        f.requester_id === targetId ? f.addressee_id : f.requester_id
+      )
+      setFriendCount(profileFriendIds.length)
+
+      // Mutual friends calculation
+      if (!isOwn) {
+        const { data: viewerFriendships } = await supabase
+          .from('friendships')
+          .select('requester_id, addressee_id')
+          .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+          .eq('status', 'accepted')
+
+        const viewerFriendIds = (viewerFriendships || []).map((f) =>
+          f.requester_id === user.id ? f.addressee_id : f.requester_id
+        )
+
+        const mutuals = viewerFriendIds.filter((id) => profileFriendIds.includes(id))
+        setMutualFriendCount(mutuals.length)
+      } else {
+        setMutualFriendCount(0)
+      }
 
       const { count: pCount } = await supabase
         .from('posts')
         .select('*', { count: 'exact', head: true })
-        .eq('author_id', userId)
+        .eq('author_id', targetId)
       setPostCount(pCount || 0)
 
       if (isFr) {
         const { data: userPosts } = await supabase
           .from('posts')
           .select(
-            'id, content, image_url, author_id, created_at, author:author_id(id, username, display_name, avatar_url)'
+            'id, content, image_url, author_id, created_at, author:author_id(id, username, display_name, avatar_url), likes:likes(count), comments:comments(count)'
           )
-          .eq('author_id', userId)
+          .eq('author_id', targetId)
           .order('created_at', { ascending: false })
           .limit(30)
-        setPosts(userPosts || [])
+
+        const formatted = (userPosts || []).map((p) => ({
+          ...p,
+          like_count: p.likes?.[0]?.count || 0,
+          comment_count: p.comments?.[0]?.count || 0,
+        }))
+        setPosts(formatted)
       }
 
       setLoading(false)
     }
-  }, [userId])
+  }, [rawParam])
+
+  // Open post detail modal and load likes/comments
+  async function openPostDetail(post) {
+    setSelectedPost(post)
+    setSelectedPostLikeCount(post.like_count || 0)
+    setLoadingComments(true)
+
+    // Check if liked by current user
+    if (currentUserId) {
+      const { data } = await supabase
+        .from('likes')
+        .select('id')
+        .eq('post_id', post.id)
+        .eq('user_id', currentUserId)
+        .maybeSingle()
+      setSelectedPostLiked(!!data)
+    }
+
+    // Load comments
+    const { data: commentData } = await supabase
+      .from('comments')
+      .select('id, content, created_at, user:user_id(id, username, display_name, avatar_url)')
+      .eq('post_id', post.id)
+      .order('created_at', { ascending: true })
+
+    setSelectedPostComments(commentData || [])
+    setLoadingComments(false)
+  }
+
+  async function toggleDetailLike() {
+    if (!selectedPost || !currentUserId) return
+    if (selectedPostLiked) {
+      setSelectedPostLiked(false)
+      setSelectedPostLikeCount((c) => Math.max(0, c - 1))
+      await supabase
+        .from('likes')
+        .delete()
+        .eq('post_id', selectedPost.id)
+        .eq('user_id', currentUserId)
+    } else {
+      setSelectedPostLiked(true)
+      setSelectedPostLikeCount((c) => c + 1)
+      await supabase
+        .from('likes')
+        .insert({ post_id: selectedPost.id, user_id: currentUserId })
+    }
+    // Update count in post list state
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === selectedPost.id
+          ? {
+              ...p,
+              like_count: selectedPostLiked
+                ? Math.max(0, p.like_count - 1)
+                : p.like_count + 1,
+            }
+          : p
+      )
+    )
+  }
+
+  async function handleAddDetailComment(e) {
+    e.preventDefault()
+    if (!commentInput.trim() || submittingComment || !selectedPost) return
+    const text = commentInput.trim()
+    setCommentInput('')
+    setSubmittingComment(true)
+
+    const { error } = await supabase
+      .from('comments')
+      .insert({ post_id: selectedPost.id, user_id: currentUserId, content: text })
+
+    if (!error) {
+      const { data: refreshed } = await supabase
+        .from('comments')
+        .select('id, content, created_at, user:user_id(id, username, display_name, avatar_url)')
+        .eq('post_id', selectedPost.id)
+        .order('created_at', { ascending: true })
+      setSelectedPostComments(refreshed || [])
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === selectedPost.id ? { ...p, comment_count: p.comment_count + 1 } : p
+        )
+      )
+    }
+    setSubmittingComment(false)
+  }
 
   async function handleSaveBio(e) {
     e.preventDefault()
@@ -117,15 +281,18 @@ export default function ProfilePage() {
       if (avatarFile) {
         const extension = avatarFile.name.split('.').pop()?.toLowerCase() || 'jpg'
         const path = `${currentUserId}/${crypto.randomUUID()}.${extension}`
-        const { error: uploadError } = await supabase.storage.from('profile-media').upload(path, avatarFile, {
-          cacheControl: '3600',
-          contentType: avatarFile.type,
-          upsert: false,
-        })
+        const { error: uploadError } = await supabase.storage
+          .from('profile-media')
+          .upload(path, avatarFile, {
+            cacheControl: '3600',
+            contentType: avatarFile.type,
+            upsert: false,
+          })
         if (uploadError) {
           avatarUrl = await fileToDataUrl(avatarFile)
         } else {
-          avatarUrl = supabase.storage.from('profile-media').getPublicUrl(path).data.publicUrl
+          avatarUrl = supabase.storage.from('profile-media').getPublicUrl(path).data
+            .publicUrl
         }
       }
 
@@ -159,7 +326,8 @@ export default function ProfilePage() {
     const file = event.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) return setAvatarError('Choose an image file.')
-    if (file.size > 4 * 1024 * 1024) return setAvatarError('Profile pictures must be smaller than 4 MB.')
+    if (file.size > 4 * 1024 * 1024)
+      return setAvatarError('Profile pictures must be smaller than 4 MB.')
     setAvatarError('')
     setAvatarFile(file)
   }
@@ -169,11 +337,42 @@ export default function ProfilePage() {
     return n
   }
 
+  function formatRelativeTime(dateStr) {
+    if (!dateStr) return 'now'
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return 'now'
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    const days = Math.floor(hrs / 24)
+    if (days < 7) return `${days}d ago`
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    })
+  }
+
   if (loading) {
     return (
       <AppShell>
-        <div className="flex-1 flex items-center justify-center">
-          <i className="fa-solid fa-circle-notch fa-spin text-2xl accent-text" />
+        <div className="flex-1 max-w-xl mx-auto py-8 px-4 animate-pulse">
+          <div className="flex flex-col items-center">
+            <div className="w-24 h-24 rounded-full bg-[var(--card-border)] mb-4" />
+            <div className="w-36 h-5 rounded-lg bg-[var(--card-border)] mb-2" />
+            <div className="w-24 h-3.5 rounded-lg bg-[var(--card-border)] mb-4" />
+            <div className="w-56 h-10 rounded-2xl bg-[var(--card-border)] mb-6" />
+            <div className="flex gap-10">
+              <div className="w-12 h-8 rounded bg-[var(--card-border)]" />
+              <div className="w-12 h-8 rounded bg-[var(--card-border)]" />
+              <div className="w-12 h-8 rounded bg-[var(--card-border)]" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mt-8">
+            <div className="aspect-square rounded-2xl bg-[var(--card-border)]" />
+            <div className="aspect-square rounded-2xl bg-[var(--card-border)]" />
+            <div className="aspect-square rounded-2xl bg-[var(--card-border)]" />
+          </div>
         </div>
       </AppShell>
     )
@@ -182,18 +381,20 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <AppShell>
-        <div className="flex-1 flex items-center justify-center px-4">
-          <div className="glass rounded-3xl p-8 text-center max-w-xs w-full">
+        <div className="flex-1 flex items-center justify-center px-4 py-16">
+          <div className="glass rounded-3xl p-8 text-center max-w-xs w-full shadow-glass">
             <p className="text-3xl mb-2">🔍</p>
-            <h3 className="font-display font-bold text-base mb-1">Profile not found</h3>
-            <p className="text-xs text-sub">This user profile does not exist.</p>
+            <h3 className="font-display font-bold text-base mb-1 text-[var(--text-main)]">
+              Profile not found
+            </h3>
+            <p className="text-xs text-sub">@{rawParam.replace(/^@/, '')} does not exist on Cirvy.</p>
           </div>
         </div>
       </AppShell>
     )
   }
 
-  const isOwnProfile = currentUserId === userId
+  const isOwnProfile = currentUserId === profile.id
 
   async function handleLogout() {
     if (window.confirm(t('logoutConfirm') || 'Are you sure you want to log out?')) {
@@ -205,28 +406,30 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <main className="flex-1 overflow-y-auto px-4 py-8 view">
+      <main className="flex-1 overflow-y-auto px-4 py-6 view max-w-2xl mx-auto">
         {/* Top action buttons */}
         <div className="flex justify-end gap-2 mb-2">
           {isOwnProfile && (
             <>
               <button
                 onClick={() => setShowSettings(true)}
-                className="w-9 h-9 rounded-xl field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[#4A7A8C]"
+                className="w-9 h-9 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[#4A7A8C]"
                 title="Settings"
+                aria-label="Settings"
               >
                 <i className="fa-solid fa-gear text-sm text-sub" />
               </button>
               <button
                 onClick={() => setShowEditBio(true)}
-                className="w-9 h-9 rounded-xl field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[#4A7A8C]"
+                className="w-9 h-9 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[#4A7A8C]"
                 title="Edit Profile"
+                aria-label="Edit Profile"
               >
                 <i className="fa-solid fa-pen text-sm text-sub" />
               </button>
               <button
                 onClick={handleLogout}
-                className="h-9 px-3 rounded-xl field flex items-center gap-1.5 text-xs font-semibold text-[#4A7A8C] hover:bg-[#D1E0E3] hover:border-[#4A7A8C] scale-tap transition cursor-pointer"
+                className="h-9 px-3.5 rounded-full field flex items-center gap-1.5 text-xs font-semibold text-sub hover:text-[var(--text-main)] hover:border-[#4A7A8C] scale-tap transition cursor-pointer"
                 title={t('logout')}
               >
                 <i className="fa-solid fa-arrow-right-from-bracket" />
@@ -247,152 +450,395 @@ export default function ProfilePage() {
                 )}&background=4A7A8C&color=fff&size=150`
               }
               alt=""
-              className="w-24 h-24 rounded-full object-cover ring-4"
-              style={{ ringColor: 'var(--accent-soft)' }}
+              className="w-24 h-24 rounded-full object-cover ring-4 ring-[var(--card-border)]"
             />
+            {/* Real Online/Offline Presence Indicator */}
             <span
-              className="absolute bottom-1 right-1 w-4 h-4 rounded-full ring-2"
-              style={{
-                background: '#8FBC94',
-                ringColor: 'var(--bg)',
-              }}
+              className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ring-2 ring-[var(--bg)] transition-colors ${
+                userIsOnline
+                  ? 'bg-[#8FBC94] shadow-[0_0_8px_rgba(143,188,148,0.8)] animate-pulse'
+                  : 'bg-[#8FA6B0] opacity-60'
+              }`}
+              title={userIsOnline ? 'Active now' : 'Offline'}
             />
           </div>
 
-          <h3 className="font-display font-bold text-lg mt-3 text-main">
+          <h3 className="font-display font-bold text-xl mt-3 text-[var(--text-main)]">
             {profile.display_name}
           </h3>
-          <p className="text-sub text-sm">@{profile.username}</p>
+          <p className="text-sub text-xs mt-0.5 font-mono">@{profile.username}</p>
 
           {/* Badges */}
-          <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
-            <span className="text-[11px] font-mono px-2.5 py-1 rounded-full accent-soft-bg accent-text flex items-center gap-1 font-medium">
-              <i className="fa-solid fa-lock text-[9px]" />
+          <div className="flex items-center gap-2 mt-2.5 flex-wrap justify-center">
+            <span className="text-[11px] font-mono px-3 py-1 rounded-full field flex items-center gap-1.5 font-medium text-sub">
+              <i className="fa-solid fa-lock text-[10px]" />
               <span>{t('privateProfile')}</span>
             </span>
 
-            {ghostMode && (
-              <span className="text-[11px] font-mono px-2.5 py-1 rounded-full field flex items-center gap-1 text-sub font-medium">
-                <i className="fa-solid fa-ghost text-[9px]" />
-                <span>{t('ghostActive')}</span>
-              </span>
-            )}
+            <span
+              className={`text-[11px] font-mono px-3 py-1 rounded-full flex items-center gap-1.5 font-medium ${
+                userIsOnline
+                  ? 'bg-[#8FBC94]/15 text-[#8FBC94] border border-[#8FBC94]/30'
+                  : 'field text-sub'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  userIsOnline ? 'bg-[#8FBC94]' : 'bg-[#8FA6B0]'
+                }`}
+              />
+              <span>{userIsOnline ? 'Active Now' : 'Offline'}</span>
+            </span>
           </div>
 
           {/* Bio */}
-          <p className="text-sm text-sub mt-3 max-w-xs leading-relaxed">
+          <p className="text-sm text-sub mt-3.5 max-w-sm leading-relaxed px-2">
             {isFriend || isOwnProfile
-              ? profile.bio || 'Actor · storyteller · here for the people who already know me. Fan requests reviewed manually 🤍'
+              ? profile.bio || 'No bio yet.'
               : 'Bio is hidden. Connect to view full profile.'}
           </p>
 
           {/* Friend action button if not own profile */}
           {!isOwnProfile && (
-            <div className="mt-3">
-              <FriendButton profileId={userId} currentUserId={currentUserId} />
+            <div className="mt-4">
+              <FriendButton profileId={profile.id} currentUserId={currentUserId} />
             </div>
           )}
 
           {/* Stats Bar */}
-          <div className="flex gap-8 mt-4 text-sm">
+          <div className="flex gap-10 mt-6 text-center border-y border-[var(--card-border)] py-3 px-6 rounded-2xl glass">
             <div>
-              <p className="font-bold text-main">{formatCount(postCount)}</p>
-              <p className="text-sub text-xs">{t('postsLabel')}</p>
+              <p className="font-bold text-base text-[var(--text-main)]">
+                {formatCount(postCount)}
+              </p>
+              <p className="text-sub text-[11px] uppercase tracking-wider font-mono">
+                {t('postsLabel')}
+              </p>
             </div>
             <div>
-              <p className="font-bold text-main">{formatCount(friendCount)}</p>
-              <p className="text-sub text-xs">{t('friendsLabel')}</p>
+              <p className="font-bold text-base text-[var(--text-main)]">
+                {formatCount(friendCount)}
+              </p>
+              <p className="text-sub text-[11px] uppercase tracking-wider font-mono">
+                {t('friendsLabel')}
+              </p>
             </div>
             <div>
-              <p className="font-bold text-main">98%</p>
-              <p className="text-sub text-xs">{t('trustLabel')}</p>
+              <p className="font-bold text-base text-[var(--text-main)]">
+                {isOwnProfile ? '—' : mutualFriendCount}
+              </p>
+              <p className="text-sub text-[11px] uppercase tracking-wider font-mono">
+                Mutual
+              </p>
             </div>
           </div>
         </div>
 
         {/* Profile Posts Grid */}
-        {isFriend && (
-          <div className="grid grid-cols-3 gap-1.5 mt-6">
+        {isFriend ? (
+          <div className="mt-7">
             {posts.length === 0 ? (
-              <div className="col-span-3 text-center text-sub text-xs py-8">
-                No posts shared yet.
+              <div className="text-center text-sub text-xs py-12 glass rounded-3xl">
+                <i className="fa-regular fa-images text-2xl mb-2 block opacity-60" />
+                No posts shared in this circle yet.
               </div>
             ) : (
-              posts.map((p) => (
-                <div
-                  key={p.id}
-                  className="relative rounded-lg overflow-hidden aspect-square group bg-[var(--bg-alt)] border border-[var(--card-border)]"
-                >
-                  {p.image_url ? (
-                    <img
-                      src={p.image_url}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full p-2 flex items-center justify-center text-[11px] text-sub text-center leading-tight bg-[var(--card-bg)]">
-                      {p.content}
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {posts.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => openPostDetail(p)}
+                    className="relative rounded-2xl overflow-hidden aspect-square group bg-[var(--card-bg)] border border-[var(--card-border)] transition-transform scale-tap cursor-pointer text-left focus:outline-none"
+                  >
+                    {p.image_url ? (
+                      <img
+                        src={p.image_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full p-3 flex items-center justify-center text-xs text-[var(--text-main)] text-center leading-relaxed bg-[var(--card-bg)] font-medium">
+                        <span className="line-clamp-4">{p.content}</span>
+                      </div>
+                    )}
+                    {/* Hover Overlay with Like Count */}
+                    <div className="absolute inset-0 bg-[#10181C]/60 backdrop-blur-[2px] transition-opacity duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 gap-3 text-[#F5F7F8]">
+                      <span className="flex items-center gap-1.5 text-xs font-bold">
+                        <Heart size={14} className="fill-current" />
+                        <span>{formatCount(p.like_count || 0)}</span>
+                      </span>
+                      {p.comment_count > 0 && (
+                        <span className="flex items-center gap-1.5 text-xs font-bold">
+                          <MessageSquare size={14} className="fill-current" />
+                          <span>{formatCount(p.comment_count)}</span>
+                        </span>
+                      )}
                     </div>
-                  )}
-                  <div className="absolute inset-0 bg-[#2E3B42]/0 group-hover:bg-[#2E3B42]/25 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <span className="text-[#F5F7F8] text-xs font-semibold">
-                      <i className="fa-solid fa-heart mr-1" />
-                    </span>
-                  </div>
-                </div>
-              ))
+                  </button>
+                ))}
+              </div>
             )}
+          </div>
+        ) : (
+          <div className="mt-8 text-center p-8 glass rounded-3xl">
+            <i className="fa-solid fa-lock text-2xl text-sub mb-2" />
+            <h4 className="font-display font-bold text-sm text-[var(--text-main)]">
+              Posts are Private
+            </h4>
+            <p className="text-xs text-sub mt-1 max-w-xs mx-auto">
+              Become accepted friends to see @{profile.username}&apos;s photos and thoughts.
+            </p>
           </div>
         )}
       </main>
 
-      {/* ============ MODAL: EDIT BIO ============ */}
-      {showEditBio && (
-        <div className="fixed inset-0 z-[90] flex items-end md:items-center justify-center">
+      {/* ============ MODAL: POST DETAIL VIEW ============ */}
+      {selectedPost && (
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4">
           <div
-            className="modal-backdrop absolute inset-0 bg-[#2E3B42]/40"
-            onClick={() => setShowEditBio(false)}
+            className="modal-backdrop absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setSelectedPost(null)}
           />
-          <div className="modal-panel relative glass w-full md:w-96 rounded-t-3xl md:rounded-3xl p-5 z-10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-bold text-lg">Edit Profile Bio</h3>
+          <div className="modal-panel relative glass w-full md:max-w-xl max-h-[90vh] rounded-t-3xl md:rounded-3xl p-0 z-10 flex flex-col overflow-hidden border shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--card-border)] bg-[var(--card-bg)]">
+              <div className="flex items-center gap-2.5">
+                <Link to={`/${selectedPost.author?.username || selectedPost.author?.id}`}>
+                  <img
+                    src={
+                      selectedPost.author?.avatar_url ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        selectedPost.author?.display_name || 'U'
+                      )}&background=4A7A8C&color=fff`
+                    }
+                    alt=""
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                </Link>
+                <div className="leading-tight">
+                  <Link
+                    to={`/${selectedPost.author?.username || selectedPost.author?.id}`}
+                    className="text-xs font-bold text-[var(--text-main)] hover:underline block"
+                  >
+                    {selectedPost.author?.display_name || 'User'}
+                  </Link>
+                  <p className="text-[10px] text-sub">
+                    @{selectedPost.author?.username} · {formatRelativeTime(selectedPost.created_at)}
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={() => setShowEditBio(false)}
-                className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap"
+                onClick={() => setSelectedPost(null)}
+                className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap hover:border-[#4A7A8C] cursor-pointer"
+                aria-label="Close"
               >
-                <i className="fa-solid fa-xmark text-xs" />
+                <X size={15} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveBio} className="space-y-3">
-              <div>
-                <span className="mb-2 block text-xs font-semibold text-[#2E3B42]">Profile picture</span>
-                <div className="flex items-center gap-3 rounded-xl bg-[#D1E0E3]/55 p-3">
+            {/* Modal Body: Scrollable */}
+            <div className="flex-1 overflow-y-auto">
+              {selectedPost.image_url && (
+                <div className="bg-[var(--card-border)]/30 flex items-center justify-center max-h-96 overflow-hidden">
                   <img
-                    src={avatarPreview || profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.display_name || 'U')}&background=4A7A8C&color=F5F7F8`}
+                    src={selectedPost.image_url}
+                    alt=""
+                    className="w-full max-h-96 object-contain"
+                  />
+                </div>
+              )}
+
+              {/* Caption */}
+              <div className="p-5 border-b border-[var(--card-border)]">
+                <p className="text-sm text-[var(--text-main)] leading-relaxed whitespace-pre-wrap">
+                  <Link
+                    to={`/${selectedPost.author?.username || selectedPost.author?.id}`}
+                    className="font-bold mr-1.5 hover:underline"
+                  >
+                    @{selectedPost.author?.username}
+                  </Link>
+                  {selectedPost.content}
+                </p>
+
+                {/* Actions & Likes */}
+                <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[var(--card-border)]/60">
+                  <button
+                    onClick={toggleDetailLike}
+                    className="flex items-center gap-1.5 text-xs font-bold scale-tap cursor-pointer transition text-[var(--text-main)]"
+                  >
+                    <Heart
+                      size={17}
+                      className={
+                        selectedPostLiked
+                          ? 'fill-[#4A7A8C] text-[#4A7A8C] dark:fill-[#CFE3E9] dark:text-[#CFE3E9]'
+                          : 'text-sub'
+                      }
+                    />
+                    <span>{formatCount(selectedPostLikeCount)} likes</span>
+                  </button>
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-sub">
+                    <MessageSquare size={16} />
+                    <span>{selectedPostComments.length} comments</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Comments list */}
+              <div className="p-5 space-y-3">
+                <h4 className="text-xs font-bold font-mono uppercase tracking-wider text-sub">
+                  Comments
+                </h4>
+                {loadingComments ? (
+                  <div className="py-6 text-center text-xs text-sub">
+                    <i className="fa-solid fa-circle-notch fa-spin mr-1.5" /> Loading replies...
+                  </div>
+                ) : selectedPostComments.length === 0 ? (
+                  <p className="text-xs text-sub text-center py-4">
+                    No comments yet. Start the private conversation!
+                  </p>
+                ) : (
+                  selectedPostComments.map((c) => (
+                    <div key={c.id} className="flex items-start gap-2.5 text-xs">
+                      <Link to={`/${c.user?.username || c.user?.id}`}>
+                        <img
+                          src={
+                            c.user?.avatar_url ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              c.user?.display_name || 'U'
+                            )}&background=4A7A8C&color=fff`
+                          }
+                          alt=""
+                          className="w-7 h-7 rounded-full object-cover mt-0.5"
+                        />
+                      </Link>
+                      <div className="flex-1 field rounded-2xl p-2.5">
+                        <div className="flex items-baseline justify-between mb-0.5">
+                          <Link
+                            to={`/${c.user?.username || c.user?.id}`}
+                            className="font-bold text-[var(--text-main)] hover:underline"
+                          >
+                            @{c.user?.username || 'user'}
+                          </Link>
+                          <span className="text-[10px] text-sub">
+                            {formatRelativeTime(c.created_at)}
+                          </span>
+                        </div>
+                        <p className="text-sub leading-normal">{c.content}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Comment Form */}
+            <form
+              onSubmit={handleAddDetailComment}
+              className="p-3 border-t border-[var(--card-border)] bg-[var(--card-bg)] flex gap-2"
+            >
+              <input
+                type="text"
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                placeholder="Add a comment..."
+                className="field flex-1 rounded-full px-4 py-2.5 text-xs outline-none focus:border-[#4A7A8C]"
+              />
+              <button
+                type="submit"
+                disabled={!commentInput.trim() || submittingComment}
+                className="accent-bg text-[#F5F7F8] dark:text-[#10181C] px-4 py-2.5 rounded-full text-xs font-bold scale-tap disabled:opacity-50 cursor-pointer flex items-center gap-1"
+              >
+                <Send size={13} />
+                <span>{submittingComment ? '...' : 'Send'}</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============ MODAL: EDIT BIO ============ */}
+      {showEditBio && (
+        <div className="fixed inset-0 z-[90] flex items-end md:items-center justify-center p-0 md:p-4">
+          <div
+            className="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowEditBio(false)}
+          />
+          <div className="modal-panel relative glass w-full md:w-96 rounded-t-3xl md:rounded-3xl p-5 z-10 border shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display font-bold text-lg text-[var(--text-main)]">
+                Edit Profile
+              </h3>
+              <button
+                onClick={() => setShowEditBio(false)}
+                className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap hover:border-[#4A7A8C] cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBio} className="space-y-4">
+              <div>
+                <span className="mb-2 block text-xs font-semibold text-[var(--text-main)]">
+                  Profile Picture
+                </span>
+                <div className="flex items-center gap-3 rounded-2xl field p-3">
+                  <img
+                    src={
+                      avatarPreview ||
+                      profile.avatar_url ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        profile.display_name || 'U'
+                      )}&background=4A7A8C&color=F5F7F8`
+                    }
                     alt="Profile preview"
-                    className="h-14 w-14 rounded-full object-cover"
+                    className="h-14 w-14 rounded-full object-cover ring-2 ring-[var(--card-border)]"
                   />
                   <div className="min-w-0 flex-1">
-                    <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg bg-[#4A7A8C] px-3 text-xs font-bold text-[#F5F7F8] hover:bg-[#2E3B42]">
-                      <Image size={14} />
+                    <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full accent-bg px-3 text-xs font-bold text-[#F5F7F8] dark:text-[#10181C] hover:opacity-90 scale-tap">
+                      <Image size={13} />
                       <span>{avatarFile ? 'Replace picture' : 'Choose picture'}</span>
-                      <input type="file" accept="image/*" capture="environment" onChange={handleAvatarChange} className="sr-only" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="sr-only"
+                      />
                     </label>
-                    <p className="mt-1 text-[10px] text-[#4A7A8C]">Device or camera, up to 4 MB</p>
+                    <p className="mt-1 text-[10px] text-sub">Device gallery or camera</p>
                   </div>
-                  {avatarFile && <button type="button" onClick={() => setAvatarFile(null)} className="rounded-lg p-2 text-[#4A7A8C] hover:bg-[#D1E0E3]" aria-label="Remove new profile picture"><X size={15} /></button>}
-                  <Camera size={16} className="text-[#4A7A8C]" />
+                  {avatarFile && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatarFile(null)}
+                      className="rounded-full p-1.5 field text-sub hover:text-[var(--text-main)] scale-tap"
+                      aria-label="Remove new profile picture"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                  <Camera size={16} className="text-sub" />
                 </div>
-                {avatarError && <p role="alert" className="mt-2 rounded-lg bg-[#D1E0E3] px-3 py-2 text-xs font-semibold text-[#2E3B42]">{avatarError}</p>}
+                {avatarError && (
+                  <p
+                    role="alert"
+                    className="mt-2 rounded-xl field px-3 py-1.5 text-xs font-semibold text-[var(--text-main)]"
+                  >
+                    {avatarError}
+                  </p>
+                )}
               </div>
+
               <div>
+                <label className="block text-xs font-semibold text-[var(--text-main)] mb-1.5">
+                  Bio
+                </label>
                 <textarea
                   value={bioInput}
                   onChange={(e) => setBioInput(e.target.value)}
                   rows={3}
                   placeholder="Share a short bio with your circle..."
-                  className="field w-full rounded-xl p-3 text-sm resize-none"
+                  className="field w-full rounded-2xl p-3 text-sm resize-none outline-none focus:border-[#4A7A8C]"
                   autoFocus
                 />
               </div>
@@ -401,16 +847,18 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setShowEditBio(false)}
-                  className="field px-4 py-2 rounded-xl text-xs font-semibold scale-tap"
+                  className="field px-4 py-2 rounded-full text-xs font-semibold scale-tap cursor-pointer"
                 >
                   {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={savingBio}
-                  className="accent-bg text-[#F5F7F8] px-5 py-2 rounded-xl text-xs font-semibold scale-tap disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                  className="accent-bg text-[#F5F7F8] dark:text-[#10181C] px-5 py-2 rounded-full text-xs font-bold scale-tap disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                 >
-                  {savingBio && <i className="fa-solid fa-circle-notch fa-spin mr-1" />}
+                  {savingBio && (
+                    <i className="fa-solid fa-circle-notch fa-spin mr-1" />
+                  )}
                   <span>{t('save')}</span>
                 </button>
               </div>

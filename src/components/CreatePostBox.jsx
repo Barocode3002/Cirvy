@@ -64,7 +64,10 @@ export default function CreatePostBox({ onCreate, currentUser }) {
     try {
       const imageUrl = await uploadImage()
       const success = await onCreate({ content: content.trim(), imageUrl })
-      if (success) { setContent(''); setImageFile(null) }
+      if (success) {
+        setContent('')
+        setImageFile(null)
+      }
     } catch {
       setUploadError('This image could not be attached. Try a smaller image.')
     } finally {
@@ -73,32 +76,96 @@ export default function CreatePostBox({ onCreate, currentUser }) {
   }
 
   const profile = currentUser?.user_metadata || {}
-  const avatar = profile.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.display_name || 'You')}&background=4A7A8C&color=F5F7F8`
+  const avatar =
+    profile.avatar_url ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      profile.display_name || 'You'
+    )}&background=4A7A8C&color=F5F7F8`
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl bg-[#F5F7F8] p-5 shadow-[0_12px_32px_rgba(46,59,66,0.07)] dark:bg-[#2E3B42] dark:shadow-none">
+    <form
+      onSubmit={handleSubmit}
+      className="glass rounded-3xl p-5 shadow-glass transition-all"
+    >
       <div className="flex gap-3">
-        <img src={avatar} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
-        <textarea value={content} onChange={(event) => setContent(event.target.value)} placeholder="Share something with your private circle..." rows={3} required className="min-h-20 flex-1 resize-none bg-transparent pt-1 text-sm leading-6 text-[#2E3B42] outline-none placeholder:text-[#4A7A8C]/60 dark:text-[#F5F7F8]" />
+        <img
+          src={avatar}
+          alt=""
+          className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-[var(--card-border)]"
+        />
+        <textarea
+          value={content}
+          onChange={(event) => setContent(event.target.value)}
+          placeholder="Share something with your private circle..."
+          rows={3}
+          required
+          className="min-h-20 flex-1 resize-none bg-transparent pt-1 text-sm leading-6 text-[var(--text-main)] outline-none placeholder:text-sub"
+        />
       </div>
-      <div className="mt-4 flex flex-col gap-4 border-t border-[#D1E0E3] pt-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mt-4 flex flex-col gap-4 border-t border-[var(--card-border)] pt-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-[#D1E0E3] px-3 text-xs font-bold text-[#2E3B42] transition hover:bg-[#8FBC94] dark:bg-[#4A7A8C] dark:text-[#F5F7F8]">
-              <Image size={16} className="text-[#4A7A8C]" />
+            <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-full field px-3 text-xs font-semibold text-[var(--text-main)] transition hover:border-[#4A7A8C] scale-tap">
+              <Image size={15} className="accent-text" />
               <span>{imageFile ? 'Replace image' : 'Add image'}</span>
-              <input type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="sr-only" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="sr-only"
+              />
             </label>
-            <span className="inline-flex items-center gap-1 text-[11px] text-[#4A7A8C]"><Camera size={14} />Device or camera</span>
-            {imageFile && <button type="button" onClick={() => setImageFile(null)} className="inline-flex h-10 items-center gap-1 rounded-xl px-2.5 text-xs font-semibold text-[#4A7A8C] hover:bg-[#D1E0E3]" aria-label="Remove image"><X size={15} />Remove</button>}
+            <span className="inline-flex items-center gap-1 text-[11px] text-sub">
+              <Camera size={13} />
+              <span>Gallery or camera</span>
+            </span>
+            {imageFile && (
+              <button
+                type="button"
+                onClick={() => setImageFile(null)}
+                className="inline-flex h-9 items-center gap-1 rounded-full field px-3 text-xs font-semibold text-sub hover:text-[var(--text-main)] scale-tap"
+                aria-label="Remove image"
+              >
+                <X size={14} />
+                <span>Remove</span>
+              </button>
+            )}
           </div>
-          {imageFile && <p className="mt-2 max-w-[18rem] truncate text-[11px] text-[#4A7A8C]">{imageFile.name}</p>}
-          {!imageFile && <p className="mt-2 text-[10px] text-[#4A7A8C]">JPG, PNG, or HEIC up to 6 MB</p>}
+          {imageFile && (
+            <p className="mt-2 max-w-[18rem] truncate text-[11px] text-sub">
+              {imageFile.name}
+            </p>
+          )}
         </div>
-        <button type="submit" disabled={!content.trim() || posting} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#4A7A8C] px-5 text-sm font-bold text-[#F5F7F8] transition hover:bg-[#2E3B42] disabled:cursor-not-allowed disabled:opacity-50"><Send size={16} />{posting ? 'Posting...' : 'Post'}</button>
+        <button
+          type="submit"
+          disabled={!content.trim() || posting}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-full accent-bg px-5 text-xs font-bold text-[#F5F7F8] dark:text-[#10181C] transition scale-tap disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Send size={14} />
+          <span>{posting ? 'Posting...' : 'Post'}</span>
+        </button>
       </div>
-      {uploadError && <p role="alert" className="mt-3 rounded-xl bg-[#D1E0E3] px-3 py-2 text-xs font-semibold text-[#2E3B42]">{uploadError}</p>}
-      {previewUrl && <div className="relative mt-4 h-44 overflow-hidden rounded-xl border border-[#D1E0E3] bg-[#D1E0E3] sm:h-52"><img src={previewUrl} alt="Preview of your post" className="h-full w-full object-contain" /><span className="absolute bottom-3 left-3 rounded-full bg-[#2E3B42] px-3 py-1 text-[11px] font-semibold text-[#F5F7F8]">Preview</span></div>}
+      {uploadError && (
+        <p
+          role="alert"
+          className="mt-3 rounded-xl field px-3 py-2 text-xs font-semibold text-[var(--text-main)]"
+        >
+          {uploadError}
+        </p>
+      )}
+      {previewUrl && (
+        <div className="relative mt-4 h-48 overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--card-border)]">
+          <img
+            src={previewUrl}
+            alt="Preview of your post"
+            className="h-full w-full object-contain"
+          />
+          <span className="absolute bottom-3 left-3 rounded-full bg-[var(--bg)]/90 px-3 py-1 text-[11px] font-semibold text-[var(--text-main)] border border-[var(--card-border)]">
+            Preview
+          </span>
+        </div>
+      )}
     </form>
   )
 }

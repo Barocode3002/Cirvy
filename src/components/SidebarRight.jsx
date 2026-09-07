@@ -54,9 +54,11 @@ export default function SidebarRight() {
           <p className="text-xs text-[#677A85]">No suggestions right now.</p>
         ) : (
           <div className="space-y-4">
-            {suggestions.map(person => (
+            {suggestions.map(person => {
+              const personPath = person.username ? `/${person.username}` : `/${person.id}`
+              return (
               <div key={person.id} className="flex items-center gap-3">
-                <Link to={`/profile/${person.id}`} className="shrink-0">
+                <Link to={personPath} className="shrink-0">
                   <img 
                     src={person.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.display_name || 'U')}&background=4A7A8C&color=fff`}
                     alt=""
@@ -64,21 +66,21 @@ export default function SidebarRight() {
                   />
                 </Link>
                 <div className="flex-1 truncate">
-                  <Link to={`/profile/${person.id}`} className="hover:underline">
+                  <Link to={personPath} className="hover:underline">
                     <p className="text-sm font-semibold text-[#2E3B42] dark:text-[#F5F7F8] truncate">
                       {person.display_name || 'User'}
                     </p>
                   </Link>
-                  <p className="text-xs text-[#677A85] truncate">@{person.username}</p>
+                  <p className="text-xs text-[#677A85] truncate font-mono">@{person.username}</p>
                 </div>
                 <Link 
-                  to={`/profile/${person.id}`}
+                  to={personPath}
                   className="shrink-0 text-xs font-semibold text-[#4A7A8C] bg-[#D1E0E3]/50 hover:bg-[#D1E0E3] px-3 py-1.5 rounded-full transition-colors"
                 >
                   View
                 </Link>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>
