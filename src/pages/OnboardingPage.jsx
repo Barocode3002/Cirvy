@@ -143,7 +143,7 @@ export default function OnboardingPage() {
         {/* Brand header */}
         <div className="text-center mb-6 flex flex-col items-center">
           <CirvyLogo variant="full" size={40} className="mb-3" />
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-[#8FBC94]/15 text-[#8FBC94] border border-[#8FBC94]/30 mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-display font-semibold bg-[#8FBC94]/15 text-[#8FBC94] border border-[#8FBC94]/30 mb-2">
             <Sparkles size={12} />
             <span>Step 1 of 1 · Welcome</span>
           </div>
@@ -211,7 +211,7 @@ export default function OnboardingPage() {
                 <label className="text-xs font-semibold text-[var(--text-main)]">
                   Bio <span className="text-sub font-normal">(optional)</span>
                 </label>
-                <span className="text-[10px] font-mono text-sub">
+                <span className="text-[10px] font-display text-sub">
                   {bio.length}/160
                 </span>
               </div>
@@ -227,7 +227,7 @@ export default function OnboardingPage() {
             {/* User identity preview badge */}
             <div className="field rounded-2xl p-3 flex items-center justify-between text-xs">
               <span className="text-sub">Handle</span>
-              <span className="font-mono font-bold text-[var(--text-main)]">
+              <span className="font-display font-bold text-[var(--text-main)]">
                 @{username}
               </span>
             </div>

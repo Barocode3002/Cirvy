@@ -34,7 +34,7 @@ export default function SidebarLeft() {
         .select('id, username, display_name, avatar_url')
         .in('id', friendIds)
         .limit(5)
-      
+
       setFriends(data || [])
     }
   }
@@ -61,7 +61,7 @@ export default function SidebarLeft() {
                 {t('brand') || 'Cirvy'}
               </p>
             </div>
-            <p className="text-[10px] font-mono text-[#677A85] tracking-wider uppercase">
+            <p className="text-[10px] font-display text-[#677A85] tracking-wider uppercase">
               {t('shieldLabel') || 'Private'}
             </p>
           </div>
@@ -75,10 +75,9 @@ export default function SidebarLeft() {
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-medium scale-tap ${
-                isActive
-                  ? 'bg-[#F5F7F8] text-[#4A7A8C] shadow-sm'
-                  : 'text-[#677A85] hover:bg-[#F5F7F8] hover:text-[#2E3B42]'
+              `flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-medium scale-tap ${isActive
+                ? 'bg-[#F5F7F8] text-[#4A7A8C] shadow-sm'
+                : 'text-[#677A85] hover:bg-[#F5F7F8] hover:text-[#2E3B42]'
               }`
             }
           >
@@ -98,7 +97,7 @@ export default function SidebarLeft() {
             </span>
           )}
         </div>
-        
+
         {friends.length === 0 ? (
           <p className="text-xs text-[#677A85]">No friends yet.</p>
         ) : (
@@ -106,19 +105,20 @@ export default function SidebarLeft() {
             {friends.map(friend => {
               const friendPath = friend.username ? `/${friend.username}` : `/${friend.id}`
               return (
-              <NavLink to={friendPath} key={friend.id} className="flex items-center gap-3 group">
-                <img 
-                  src={friend.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.display_name || 'U')}&background=4A7A8C&color=fff`}
-                  alt=""
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-                <div className="flex-1 truncate">
-                  <p className="text-xs font-semibold text-[#2E3B42] dark:text-[#F5F7F8] group-hover:text-[#4A7A8C] truncate">
-                    {friend.display_name || 'User'}
-                  </p>
-                </div>
-              </NavLink>
-            )})}
+                <NavLink to={friendPath} key={friend.id} className="flex items-center gap-3 group">
+                  <img
+                    src={friend.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.display_name || 'U')}&background=4A7A8C&color=fff`}
+                    alt=""
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                  <div className="flex-1 truncate">
+                    <p className="text-xs font-semibold text-[#2E3B42] dark:text-[#F5F7F8] group-hover:text-[#4A7A8C] truncate">
+                      {friend.display_name || 'User'}
+                    </p>
+                  </div>
+                </NavLink>
+              )
+            })}
           </div>
         )}
       </div>

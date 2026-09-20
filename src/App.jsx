@@ -8,6 +8,9 @@ import FriendRequestsPage from '@/pages/FriendRequestsPage'
 import SearchPage from '@/pages/SearchPage'
 import OnboardingPage from '@/pages/OnboardingPage'
 import ChatPage from '@/pages/ChatPage'
+import CreatePostPage from '@/pages/CreatePostPage'
+import NotificationsPage from '@/pages/NotificationsPage'
+import SettingsPage from '@/pages/SettingsPage'
 
 // --------------------------------------------------------------------------
 // App — the router shell.
@@ -17,6 +20,9 @@ import ChatPage from '@/pages/ChatPage'
 //  /login       → public  → sign in
 //  /onboarding  → private → set avatar & bio for new accounts (wrapped in ProtectedRoute)
 //  /feed        → private → friends-only feed (wrapped in ProtectedRoute)
+//  /create-post → private → dedicated post creation route (wrapped in ProtectedRoute)
+//  /notifications → private → functional notifications center (wrapped in ProtectedRoute)
+//  /settings    → private → dedicated full settings page (wrapped in ProtectedRoute)
 //  /friends     → private → friend requests & friends list (wrapped in ProtectedRoute)
 //  /search      → private → zero-tracking user search (wrapped in ProtectedRoute)
 //  /:username   → private → user profile route by username e.g. /parcomohsen (wrapped in ProtectedRoute)
@@ -43,6 +49,38 @@ export default function App() {
           element={
             <ProtectedRoute>
               <FeedPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-post"
+          element={
+            <ProtectedRoute>
+              <CreatePostPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create"
+          element={
+            <ProtectedRoute>
+              <CreatePostPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />

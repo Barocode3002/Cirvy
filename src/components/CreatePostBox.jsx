@@ -1,37 +1,78 @@
 import { useEffect, useState } from 'react'
-import { Camera, Image, Send, X } from 'lucide-react'
+import { Camera, Image, Video, BarChart2, Send, X, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function CreatePostBox({ onCreate, currentUser }) {
+  const { user: authUser, profile } = useAuth()
+  const activeUser = currentUser || authUser
   const [content, setContent] = useState('')
-  const [imageFile, setImageFile] = useState(null)
+  const [mediaFile, setMediaFile] = useState(null)
+  const [mediaType, setMediaType] = useState(null) // 'image' | 'video'
   const [previewUrl, setPreviewUrl] = useState('')
+  const [showPoll, setShowPoll] = useState(false)
+  const [pollQuestion, setPollQuestion] = useState('')
+  const [pollOptions, setPollOptions] = useState(['', ''])
   const [posting, setPosting] = useState(false)
   const [uploadError, setUploadError] = useState('')
 
   useEffect(() => {
-    if (!imageFile) {
+    if (!mediaFile) {
       setPreviewUrl('')
+      setMediaType(null)
       return undefined
     }
-    const objectUrl = URL.createObjectURL(imageFile)
+    const isVid = mediaFile.type.startsWith('video/')
+    setMediaType(isVid ? 'video' : 'image')
+    const objectUrl = URL.createObjectURL(mediaFile)
     setPreviewUrl(objectUrl)
     return () => URL.revokeObjectURL(objectUrl)
-  }, [imageFile])
+  }, [mediaFile])
 
   function handleFileChange(event) {
     const file = event.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) {
-      setUploadError('Choose an image file to attach.')
+
+    const isImage = file.type.startsWith('image/')
+    const isVideo = file.type.startsWith('video/')
+
+    if (!isImage && !isVideo) {
+      setUploadError('Please select a valid image or video file.')
       return
     }
-    if (file.size > 6 * 1024 * 1024) {
-      setUploadError('Images must be smaller than 6 MB.')
+
+    if (isVideo && file.size > 30 * 1024 * 1024) {
+      setUploadError('Videos must be smaller than 30 MB.')
       return
     }
+
+    if (isImage && file.size > 10 * 1024 * 1024) {
+      setUploadError('Images must be smaller than 10 MB.')
+      return
+    }
+
     setUploadError('')
-    setImageFile(file)
+    setMediaFile(file)
+  }
+
+  function handleAddOption() {
+    if (pollOptions.length < 4) {
+      setPollOptions((prev) => [...prev, ''])
+    }
+  }
+
+  function handleRemoveOption(idx) {
+    if (pollOptions.length > 2) {
+      setPollOptions((prev) => prev.filter((_, i) => i !== idx))
+    }
+  }
+
+  function handleOptionChange(idx, val) {
+    setPollOptions((prev) => {
+      const copy = [...prev]
+      copy[idx] = val
+      return copy
+    })
   }
 
   function fileToDataUrl(file) {
@@ -43,51 +84,97 @@ export default function CreatePostBox({ onCreate, currentUser }) {
     })
   }
 
-  async function uploadImage() {
-    if (!imageFile) return null
-    const extension = imageFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const path = `${currentUser.id}/${crypto.randomUUID()}.${extension}`
-    const { error } = await supabase.storage.from('post-media').upload(path, imageFile, {
-      cacheControl: '3600',
-      contentType: imageFile.type,
-      upsert: false,
-    })
-    if (error) return fileToDataUrl(imageFile)
-    const { data } = supabase.storage.from('post-media').getPublicUrl(path)
-    return data.publicUrl
+  async function uploadMedia() {
+    if (!mediaFile || !activeUser?.id) return { imageUrl: null, videoUrl: null }
+    const extension = mediaFile.name.split('.').pop()?.toLowerCase() || (mediaType === 'video' ? 'mp4' : 'jpg')
+    const path = `${activeUser.id}/${crypto.randomUUID()}.${extension}`
+
+    try {
+      const { error } = await supabase.storage.from('post-media').upload(path, mediaFile, {
+        cacheControl: '3600',
+        contentType: mediaFile.type,
+        upsert: false,
+      })
+
+      if (error) {
+        const dataUrl = await fileToDataUrl(mediaFile)
+        return mediaType === 'video'
+          ? { imageUrl: null, videoUrl: dataUrl }
+          : { imageUrl: dataUrl, videoUrl: null }
+      }
+
+      const { data } = supabase.storage.from('post-media').getPublicUrl(path)
+      return mediaType === 'video'
+        ? { imageUrl: null, videoUrl: data.publicUrl }
+        : { imageUrl: data.publicUrl, videoUrl: null }
+    } catch {
+      const dataUrl = await fileToDataUrl(mediaFile)
+      return mediaType === 'video'
+        ? { imageUrl: null, videoUrl: dataUrl }
+        : { imageUrl: dataUrl, videoUrl: null }
+    }
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (!content.trim() || posting) return
+    if ((!content.trim() && !mediaFile && !showPoll) || posting) return
+
+    // If poll is open, validate
+    let pollPayload = null
+    if (showPoll) {
+      if (!pollQuestion.trim()) {
+        setUploadError('Please enter a question for your poll.')
+        return
+      }
+      const validOptions = pollOptions.filter((opt) => opt.trim().length > 0)
+      if (validOptions.length < 2) {
+        setUploadError('Poll must have at least 2 non-empty options.')
+        return
+      }
+      pollPayload = {
+        question: pollQuestion.trim(),
+        options: validOptions.map((text, index) => ({ id: index, text: text.trim() })),
+      }
+    }
+
     setPosting(true)
+    setUploadError('')
+
     try {
-      const imageUrl = await uploadImage()
-      const success = await onCreate({ content: content.trim(), imageUrl })
+      const { imageUrl, videoUrl } = await uploadMedia()
+      const success = await onCreate({
+        content: content.trim(),
+        imageUrl,
+        videoUrl,
+        poll: pollPayload,
+      })
+
       if (success) {
         setContent('')
-        setImageFile(null)
+        setMediaFile(null)
+        setShowPoll(false)
+        setPollQuestion('')
+        setPollOptions(['', ''])
       }
     } catch {
-      setUploadError('This image could not be attached. Try a smaller image.')
+      setUploadError('Failed to publish post. Please check your network and try again.')
     } finally {
       setPosting(false)
     }
   }
 
-  const profile = currentUser?.user_metadata || {}
   const avatar =
-    profile.avatar_url ||
+    profile?.avatar_url ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      profile.display_name || 'You'
+      profile?.display_name || profile?.username || 'You'
     )}&background=4A7A8C&color=F5F7F8`
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="glass rounded-3xl p-5 shadow-glass transition-all"
+      className="glass rounded-3xl p-5 sm:p-6 shadow-glass transition-all border border-[var(--card-border)]"
     >
-      <div className="flex gap-3">
+      <div className="flex gap-3.5">
         <img
           src={avatar}
           alt=""
@@ -98,74 +185,175 @@ export default function CreatePostBox({ onCreate, currentUser }) {
           onChange={(event) => setContent(event.target.value)}
           placeholder="Share something with your private circle..."
           rows={3}
-          required
-          className="min-h-20 flex-1 resize-none bg-transparent pt-1 text-sm leading-6 text-[var(--text-main)] outline-none placeholder:text-sub"
+          className="min-h-24 flex-1 resize-none bg-transparent pt-1 text-sm leading-6 text-[var(--text-main)] outline-none placeholder:text-sub"
         />
       </div>
-      <div className="mt-4 flex flex-col gap-4 border-t border-[var(--card-border)] pt-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-full field px-3 text-xs font-semibold text-[var(--text-main)] transition hover:border-[#4A7A8C] scale-tap">
-              <Image size={15} className="accent-text" />
-              <span>{imageFile ? 'Replace image' : 'Add image'}</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="sr-only"
-              />
-            </label>
-            <span className="inline-flex items-center gap-1 text-[11px] text-sub">
-              <Camera size={13} />
-              <span>Gallery or camera</span>
-            </span>
-            {imageFile && (
-              <button
-                type="button"
-                onClick={() => setImageFile(null)}
-                className="inline-flex h-9 items-center gap-1 rounded-full field px-3 text-xs font-semibold text-sub hover:text-[var(--text-main)] scale-tap"
-                aria-label="Remove image"
-              >
-                <X size={14} />
-                <span>Remove</span>
-              </button>
-            )}
+
+      {/* Media Preview */}
+      {previewUrl && (
+        <div className="relative mt-4 overflow-hidden rounded-2xl border border-[var(--card-border)] bg-black/10 max-h-72 flex items-center justify-center">
+          {mediaType === 'video' ? (
+            <video
+              src={previewUrl}
+              controls
+              playsInline
+              className="max-h-72 w-full object-contain"
+            />
+          ) : (
+            <img
+              src={previewUrl}
+              alt="Post upload preview"
+              className="max-h-72 w-full object-contain"
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => setMediaFile(null)}
+            className="absolute top-3 right-3 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80 transition scale-tap cursor-pointer"
+            aria-label="Remove media"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
+
+      {/* Interactive Poll Creator Card */}
+      {showPoll && (
+        <div className="mt-4 rounded-2xl field p-4 border border-[#4A7A8C]/30 bg-[#4A7A8C]/5 transition-all space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BarChart2 size={16} className="text-[#8FBC94]" />
+              <p className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">
+                Circle Poll
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowPoll(false)
+                setPollQuestion('')
+                setPollOptions(['', ''])
+              }}
+              className="text-sub hover:text-[var(--text-main)] p-1 scale-tap cursor-pointer"
+              aria-label="Cancel poll"
+            >
+              <X size={15} />
+            </button>
           </div>
-          {imageFile && (
-            <p className="mt-2 max-w-[18rem] truncate text-[11px] text-sub">
-              {imageFile.name}
-            </p>
+
+          <input
+            type="text"
+            placeholder="Ask a question..."
+            value={pollQuestion}
+            onChange={(e) => setPollQuestion(e.target.value)}
+            className="w-full rounded-xl field px-3.5 py-2 text-xs text-[var(--text-main)] outline-none focus:border-[#4A7A8C]"
+          />
+
+          <div className="space-y-2">
+            {pollOptions.map((opt, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="w-5 text-[11px] font-display font-semibold text-sub text-center">
+                  {idx + 1}.
+                </span>
+                <input
+                  type="text"
+                  placeholder={`Option ${idx + 1}`}
+                  value={opt}
+                  onChange={(e) => handleOptionChange(idx, e.target.value)}
+                  className="flex-1 rounded-xl field px-3.5 py-2 text-xs text-[var(--text-main)] outline-none focus:border-[#4A7A8C]"
+                />
+                {pollOptions.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveOption(idx)}
+                    className="p-1.5 text-sub hover:text-red-500 scale-tap cursor-pointer"
+                    aria-label={`Remove option ${idx + 1}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {pollOptions.length < 4 && (
+            <button
+              type="button"
+              onClick={handleAddOption}
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#4A7A8C] dark:text-[#CFE3E9] hover:underline pt-1 cursor-pointer"
+            >
+              <Plus size={14} />
+              <span>Add option ({pollOptions.length}/4)</span>
+            </button>
           )}
         </div>
-        <button
-          type="submit"
-          disabled={!content.trim() || posting}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-full accent-bg px-5 text-xs font-bold text-[#F5F7F8] dark:text-[#10181C] transition scale-tap disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Send size={14} />
-          <span>{posting ? 'Posting...' : 'Post'}</span>
-        </button>
-      </div>
+      )}
+
+      {/* Error display */}
       {uploadError && (
         <p
           role="alert"
-          className="mt-3 rounded-xl field px-3 py-2 text-xs font-semibold text-[var(--text-main)]"
+          className="mt-3 rounded-xl field px-3 py-2 text-xs font-semibold text-red-500 border-red-500/30"
         >
           {uploadError}
         </p>
       )}
-      {previewUrl && (
-        <div className="relative mt-4 h-48 overflow-hidden rounded-2xl border border-[var(--card-border)] bg-[var(--card-border)]">
-          <img
-            src={previewUrl}
-            alt="Preview of your post"
-            className="h-full w-full object-contain"
-          />
-          <span className="absolute bottom-3 left-3 rounded-full bg-[var(--bg)]/90 px-3 py-1 text-[11px] font-semibold text-[var(--text-main)] border border-[var(--card-border)]">
-            Preview
+
+      {/* Attachment Toolbar & Submit */}
+      <div className="mt-5 flex flex-col gap-3 border-t border-[var(--card-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Image Upload */}
+          <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-full field px-3.5 text-xs font-semibold text-[var(--text-main)] transition hover:border-[#4A7A8C] scale-tap">
+            <Image size={15} className="accent-text" />
+            <span>Image</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="sr-only"
+            />
+          </label>
+
+          {/* Video Upload */}
+          <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-full field px-3.5 text-xs font-semibold text-[var(--text-main)] transition hover:border-[#4A7A8C] scale-tap">
+            <Video size={15} className="text-[#8FBC94]" />
+            <span>Video</span>
+            <input
+              type="file"
+              accept="video/*"
+              onChange={handleFileChange}
+              className="sr-only"
+            />
+          </label>
+
+          {/* Poll Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowPoll(!showPoll)}
+            className={`inline-flex h-9 items-center gap-2 rounded-full field px-3.5 text-xs font-semibold transition scale-tap cursor-pointer ${showPoll
+                ? 'border-[#4A7A8C] text-[var(--text-main)] bg-[#4A7A8C]/10'
+                : 'text-sub hover:text-[var(--text-main)] hover:border-[#4A7A8C]'
+              }`}
+          >
+            <BarChart2 size={15} />
+            <span>Poll</span>
+          </button>
+
+          <span className="hidden items-center gap-1 text-[11px] text-sub lg:inline-flex ms-2">
+            <Camera size={13} />
+            <span>Gallery or camera</span>
           </span>
         </div>
-      )}
+
+        <button
+          type="submit"
+          disabled={(!content.trim() && !mediaFile && !showPoll) || posting}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-full accent-bg px-6 text-xs font-bold text-[#F5F7F8] dark:text-[#10181C] transition scale-tap disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-sm"
+        >
+          <Send size={14} />
+          <span>{posting ? 'Posting...' : 'Post to Circle'}</span>
+        </button>
+      </div>
     </form>
   )
 }

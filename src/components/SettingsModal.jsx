@@ -4,12 +4,14 @@
 import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { Shield, X, LogOut, Stamp, Fingerprint, AlertTriangle } from 'lucide-react'
+import { Shield, X, LogOut, Stamp, Fingerprint, AlertTriangle, Moon, Sun } from 'lucide-react'
 
 export default function SettingsModal() {
   const {
     showSettings,
     setShowSettings,
+    dark,
+    toggleTheme,
     ghostMode,
     toggleGhostMode,
     watermark,
@@ -46,7 +48,7 @@ export default function SettingsModal() {
               <Shield size={16} />
             </div>
             <h3 className="font-display font-bold text-lg text-[var(--text-main)]">
-              {t('privacySuite')}
+              {t('privacySuite') || 'Settings & Privacy'}
             </h3>
           </div>
           <button
@@ -59,8 +61,37 @@ export default function SettingsModal() {
         </div>
 
         <div className="space-y-4">
+          {/* Appearance / Theme */}
           <div>
-            <p className="text-[10px] font-mono text-sub uppercase tracking-wider mb-2 font-semibold">
+            <p className="text-[10px] font-display text-sub uppercase tracking-wider mb-2 font-semibold">
+              Appearance
+            </p>
+            <div className="flex items-center justify-between py-2.5 px-3.5 rounded-2xl field">
+              <div className="flex items-center gap-3">
+                {dark ? (
+                  <Moon size={18} className="text-[#8FBC94]" />
+                ) : (
+                  <Sun size={18} className="text-[#4A7A8C]" />
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-[var(--text-main)]">
+                    Dark Mode
+                  </p>
+                  <p className="text-xs text-sub">
+                    {dark ? 'Dark theme enabled' : 'Light theme enabled'}
+                  </p>
+                </div>
+              </div>
+              <div
+                className={`switch ${dark ? 'on' : ''}`}
+                onClick={toggleTheme}
+                role="switch"
+                aria-checked={dark}
+              />
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] font-display text-sub uppercase tracking-wider mb-2 font-semibold">
               {t('secGeneral')}
             </p>
             <div className="flex items-center justify-between py-2.5 px-3.5 rounded-2xl field">
@@ -81,7 +112,7 @@ export default function SettingsModal() {
           </div>
 
           <div>
-            <p className="text-[10px] font-mono text-sub uppercase tracking-wider mb-2 font-semibold">
+            <p className="text-[10px] font-display text-sub uppercase tracking-wider mb-2 font-semibold">
               {t('secScreen')}
             </p>
             <div className="space-y-2">
@@ -111,7 +142,7 @@ export default function SettingsModal() {
                     <p className="text-xs text-sub">{t('leakDesc')}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#8FBC94]/20 text-[#8FBC94] font-bold">
+                <span className="text-[10px] font-display px-2 py-0.5 rounded-full bg-[#8FBC94]/20 text-[#8FBC94] font-bold">
                   {t('comingSoon')}
                 </span>
               </div>
@@ -119,7 +150,7 @@ export default function SettingsModal() {
           </div>
 
           <div>
-            <p className="text-[10px] font-mono text-sub uppercase tracking-wider mb-2 font-semibold">
+            <p className="text-[10px] font-display text-sub uppercase tracking-wider mb-2 font-semibold">
               {t('secEmergency')}
             </p>
             <button

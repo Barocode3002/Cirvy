@@ -80,24 +80,22 @@ export default function FriendRequests() {
         >
           <button
             onClick={() => setTab('friends')}
-            className={`tab-underline pb-3 text-sm font-semibold scale-tap cursor-pointer transition-colors ${
-              tab === 'friends' ? 'active text-[var(--text-main)]' : 'text-sub'
-            }`}
+            className={`tab-underline pb-3 text-sm font-semibold scale-tap cursor-pointer transition-colors ${tab === 'friends' ? 'active text-[var(--text-main)]' : 'text-sub'
+              }`}
           >
             <span>{t('friendsTab')}</span>
             {friends.length > 0 && (
-              <span className="ms-1.5 text-xs font-mono opacity-80">({friends.length})</span>
+              <span className="ms-1.5 text-xs font-display opacity-80">({friends.length})</span>
             )}
           </button>
           <button
             onClick={() => setTab('requests')}
-            className={`tab-underline pb-3 text-sm font-semibold scale-tap cursor-pointer transition-colors ${
-              tab === 'requests' ? 'active text-[var(--text-main)]' : 'text-sub'
-            }`}
+            className={`tab-underline pb-3 text-sm font-semibold scale-tap cursor-pointer transition-colors ${tab === 'requests' ? 'active text-[var(--text-main)]' : 'text-sub'
+              }`}
           >
             <span>{t('requestsTab')}</span>
             {requests.length > 0 && (
-              <span className="ms-1.5 px-2 py-0.5 rounded-full accent-bg text-[#F5F7F8] dark:text-[#10181C] text-[10px] font-mono font-bold">
+              <span className="ms-1.5 px-2 py-0.5 rounded-full accent-bg text-[#F5F7F8] dark:text-[#10181C] text-[10px] font-display font-bold">
                 {requests.length}
               </span>
             )}
@@ -161,11 +159,10 @@ export default function FriendRequests() {
                           />
                           {/* Real online/offline presence indicator */}
                           <span
-                            className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full ring-2 ring-[var(--bg)] ${
-                              online
+                            className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full ring-2 ring-[var(--bg)] ${online
                                 ? 'bg-[#8FBC94] shadow-[0_0_6px_rgba(143,188,148,0.8)]'
                                 : 'bg-[#8FA6B0] opacity-50'
-                            }`}
+                              }`}
                             title={online ? 'Online' : 'Offline'}
                           />
                         </Link>
@@ -177,7 +174,7 @@ export default function FriendRequests() {
                             {f.display_name}
                           </Link>
                           <p className="text-xs text-sub truncate">
-                            <span className="font-mono">@{f.username}</span> · {online ? (
+                            <span className="font-display">@{f.username}</span> · {online ? (
                               <span className="text-[#8FBC94] font-medium">Online</span>
                             ) : (
                               'Offline'
@@ -210,51 +207,52 @@ export default function FriendRequests() {
                   requests.map((r) => {
                     const reqPath = r.requester.username ? `/${r.requester.username}` : `/${r.requester.id}`
                     return (
-                    <div
-                      key={r.id}
-                      className="glass rounded-2xl p-3 flex items-center gap-3 transition border border-[var(--card-border)]"
-                    >
-                      <Link to={reqPath}>
-                        <img
-                          src={
-                            r.requester.avatar_url ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                              r.requester.display_name || 'U'
-                            )}&background=4A7A8C&color=fff`
-                          }
-                          alt=""
-                          className="w-11 h-11 rounded-full object-cover ring-2 ring-[var(--card-border)]"
-                        />
-                      </Link>
-                      <div className="flex-1 min-w-0">
-                        <Link
-                          to={reqPath}
-                          className="text-sm font-bold truncate hover:underline block text-[var(--text-main)]"
-                        >
-                          {r.requester.display_name}
+                      <div
+                        key={r.id}
+                        className="glass rounded-2xl p-3 flex items-center gap-3 transition border border-[var(--card-border)]"
+                      >
+                        <Link to={reqPath}>
+                          <img
+                            src={
+                              r.requester.avatar_url ||
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                r.requester.display_name || 'U'
+                              )}&background=4A7A8C&color=fff`
+                            }
+                            alt=""
+                            className="w-11 h-11 rounded-full object-cover ring-2 ring-[var(--card-border)]"
+                          />
                         </Link>
-                        <p className="text-xs text-sub truncate font-mono">
-                          @{r.requester.username}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <Link
+                            to={reqPath}
+                            className="text-sm font-bold truncate hover:underline block text-[var(--text-main)]"
+                          >
+                            {r.requester.display_name}
+                          </Link>
+                          <p className="text-xs text-sub truncate font-display">
+                            @{r.requester.username}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => accept(r.id)}
+                            disabled={actioningId === r.id}
+                            className="accent-bg text-[#F5F7F8] dark:text-[#10181C] text-xs font-bold px-3.5 py-1.5 rounded-full scale-tap transition disabled:opacity-50 cursor-pointer"
+                          >
+                            {t('accept')}
+                          </button>
+                          <button
+                            onClick={() => reject(r.id)}
+                            disabled={actioningId === r.id}
+                            className="field text-xs font-semibold px-3 py-1.5 rounded-full scale-tap transition disabled:opacity-50 cursor-pointer"
+                          >
+                            {t('decline')}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => accept(r.id)}
-                          disabled={actioningId === r.id}
-                          className="accent-bg text-[#F5F7F8] dark:text-[#10181C] text-xs font-bold px-3.5 py-1.5 rounded-full scale-tap transition disabled:opacity-50 cursor-pointer"
-                        >
-                          {t('accept')}
-                        </button>
-                        <button
-                          onClick={() => reject(r.id)}
-                          disabled={actioningId === r.id}
-                          className="field text-xs font-semibold px-3 py-1.5 rounded-full scale-tap transition disabled:opacity-50 cursor-pointer"
-                        >
-                          {t('decline')}
-                        </button>
-                      </div>
-                    </div>
-                  )})
+                    )
+                  })
                 )}
               </div>
             )}

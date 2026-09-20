@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useUI } from '@/contexts/UIContext'
 
 const PresenceContext = createContext({
   onlineUserIds: new Set(),
@@ -9,7 +10,10 @@ const PresenceContext = createContext({
 
 export function PresenceProvider({ children }) {
   const { user } = useAuth()
+  const { ghostMode } = useUI()
   const [onlineUserIds, setOnlineUserIds] = useState(() => new Set())
+  const channelRef = useRef(null)
+  const isSubscribedRef = useRef(false)
 
   useEffect(() => {
     if (!user?.id) {
@@ -24,6 +28,7 @@ export function PresenceProvider({ children }) {
         },
       },
     })
+    channelRef.current = channel
 
     channel
       .on('presence', { event: 'sync' }, () => {
@@ -39,21 +44,38 @@ export function PresenceProvider({ children }) {
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          await channel.track({
-            user_id: user.id,
-            online_at: new Date().toISOString(),
-          })
+          isSubscribedRef.current = true
+          // Only track if ghost mode is disabled
+          if (!ghostMode) {
+            await channel.track({
+              user_id: user.id,
+              online_at: new Date().toISOString(),
+            })
+          }
         }
       })
 
     return () => {
-      channel.untrack().then(() => {
-        supabase.removeChannel(channel)
-      }).catch(() => {
-        supabase.removeChannel(channel)
-      })
+      isSubscribedRef.current = false
+      channel.untrack().catch(() => {})
+      supabase.removeChannel(channel)
+      channelRef.current = null
     }
   }, [user?.id])
+
+  // Reactively track or untrack when ghostMode changes
+  useEffect(() => {
+    if (!user?.id || !channelRef.current || !isSubscribedRef.current) return
+
+    if (ghostMode) {
+      channelRef.current.untrack().catch(() => {})
+    } else {
+      channelRef.current.track({
+        user_id: user.id,
+        online_at: new Date().toISOString(),
+      }).catch(() => {})
+    }
+  }, [ghostMode, user?.id])
 
   const isOnline = (userId) => {
     if (!userId) return false

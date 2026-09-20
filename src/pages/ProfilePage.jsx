@@ -6,11 +6,11 @@ import AppShell from '@/components/AppShell'
 import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePresence } from '@/contexts/PresenceContext'
-import { Camera, Image, X, Heart, MessageSquare, Send } from 'lucide-react'
+import { Camera, Image, X, Heart, MessageSquare, Send, Settings } from 'lucide-react'
 
 export default function ProfilePage() {
   const { userId, username } = useParams()
-  const { t, showToast, setShowSettings } = useUI()
+  const { t, showToast } = useUI()
   const { signOut } = useAuth()
   const { isOnline } = usePresence()
   const navigate = useNavigate()
@@ -236,11 +236,11 @@ export default function ProfilePage() {
       prev.map((p) =>
         p.id === selectedPost.id
           ? {
-              ...p,
-              like_count: selectedPostLiked
-                ? Math.max(0, p.like_count - 1)
-                : p.like_count + 1,
-            }
+            ...p,
+            like_count: selectedPostLiked
+              ? Math.max(0, p.like_count - 1)
+              : p.like_count + 1,
+          }
           : p
       )
     )
@@ -383,7 +383,9 @@ export default function ProfilePage() {
       <AppShell>
         <div className="flex-1 flex items-center justify-center px-4 py-16">
           <div className="glass rounded-3xl p-8 text-center max-w-xs w-full shadow-glass">
-            <p className="text-3xl mb-2">🔍</p>
+            <div className="w-12 h-12 rounded-2xl bg-[#4A7A8C]/15 flex items-center justify-center mx-auto mb-3 text-sub">
+              <i className="fa-solid fa-magnifying-glass text-lg" />
+            </div>
             <h3 className="font-display font-bold text-base mb-1 text-[var(--text-main)]">
               Profile not found
             </h3>
@@ -412,12 +414,12 @@ export default function ProfilePage() {
           {isOwnProfile && (
             <>
               <button
-                onClick={() => setShowSettings(true)}
+                onClick={() => navigate('/settings')}
                 className="w-9 h-9 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[#4A7A8C]"
                 title="Settings"
                 aria-label="Settings"
               >
-                <i className="fa-solid fa-gear text-sm text-sub" />
+                <Settings size={16} className="text-sub" />
               </button>
               <button
                 onClick={() => setShowEditBio(true)}
@@ -454,11 +456,10 @@ export default function ProfilePage() {
             />
             {/* Real Online/Offline Presence Indicator */}
             <span
-              className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ring-2 ring-[var(--bg)] transition-colors ${
-                userIsOnline
+              className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ring-2 ring-[var(--bg)] transition-colors ${userIsOnline
                   ? 'bg-[#8FBC94] shadow-[0_0_8px_rgba(143,188,148,0.8)] animate-pulse'
                   : 'bg-[#8FA6B0] opacity-60'
-              }`}
+                }`}
               title={userIsOnline ? 'Active now' : 'Offline'}
             />
           </div>
@@ -466,26 +467,24 @@ export default function ProfilePage() {
           <h3 className="font-display font-bold text-xl mt-3 text-[var(--text-main)]">
             {profile.display_name}
           </h3>
-          <p className="text-sub text-xs mt-0.5 font-mono">@{profile.username}</p>
+          <p className="text-sub text-xs mt-0.5 font-display">@{profile.username}</p>
 
           {/* Badges */}
           <div className="flex items-center gap-2 mt-2.5 flex-wrap justify-center">
-            <span className="text-[11px] font-mono px-3 py-1 rounded-full field flex items-center gap-1.5 font-medium text-sub">
+            <span className="text-[11px] font-display px-3 py-1 rounded-full field flex items-center gap-1.5 font-medium text-sub">
               <i className="fa-solid fa-lock text-[10px]" />
               <span>{t('privateProfile')}</span>
             </span>
 
             <span
-              className={`text-[11px] font-mono px-3 py-1 rounded-full flex items-center gap-1.5 font-medium ${
-                userIsOnline
+              className={`text-[11px] font-display px-3 py-1 rounded-full flex items-center gap-1.5 font-medium ${userIsOnline
                   ? 'bg-[#8FBC94]/15 text-[#8FBC94] border border-[#8FBC94]/30'
                   : 'field text-sub'
-              }`}
+                }`}
             >
               <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  userIsOnline ? 'bg-[#8FBC94]' : 'bg-[#8FA6B0]'
-                }`}
+                className={`w-1.5 h-1.5 rounded-full ${userIsOnline ? 'bg-[#8FBC94]' : 'bg-[#8FA6B0]'
+                  }`}
               />
               <span>{userIsOnline ? 'Active Now' : 'Offline'}</span>
             </span>
@@ -505,29 +504,28 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Stats Bar */}
           <div className="flex gap-10 mt-6 text-center border-y border-[var(--card-border)] py-3 px-6 rounded-2xl glass">
             <div>
-              <p className="font-bold text-base text-[var(--text-main)]">
+              <p className="font-display font-bold text-base text-[var(--text-main)]">
                 {formatCount(postCount)}
               </p>
-              <p className="text-sub text-[11px] uppercase tracking-wider font-mono">
+              <p className="text-sub text-[11px] uppercase tracking-wider font-display">
                 {t('postsLabel')}
               </p>
             </div>
             <div>
-              <p className="font-bold text-base text-[var(--text-main)]">
+              <p className="font-display font-bold text-base text-[var(--text-main)]">
                 {formatCount(friendCount)}
               </p>
-              <p className="text-sub text-[11px] uppercase tracking-wider font-mono">
+              <p className="text-sub text-[11px] uppercase tracking-wider font-display">
                 {t('friendsLabel')}
               </p>
             </div>
             <div>
-              <p className="font-bold text-base text-[var(--text-main)]">
+              <p className="font-display font-bold text-base text-[var(--text-main)]">
                 {isOwnProfile ? '—' : mutualFriendCount}
               </p>
-              <p className="text-sub text-[11px] uppercase tracking-wider font-mono">
+              <p className="text-sub text-[11px] uppercase tracking-wider font-display">
                 Mutual
               </p>
             </div>
@@ -539,8 +537,10 @@ export default function ProfilePage() {
           <div className="mt-7">
             {posts.length === 0 ? (
               <div className="text-center text-sub text-xs py-12 glass rounded-3xl">
-                <i className="fa-regular fa-images text-2xl mb-2 block opacity-60" />
-                No posts shared in this circle yet.
+                <div className="w-10 h-10 rounded-2xl bg-[var(--card-border)]/40 flex items-center justify-center mx-auto mb-3">
+                  <i className="fa-regular fa-images text-xl opacity-60" />
+                </div>
+                <p className="font-medium">Nothing shared yet in this circle.</p>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -686,7 +686,7 @@ export default function ProfilePage() {
 
               {/* Comments list */}
               <div className="p-5 space-y-3">
-                <h4 className="text-xs font-bold font-mono uppercase tracking-wider text-sub">
+                <h4 className="text-xs font-bold font-display uppercase tracking-wider text-sub">
                   Comments
                 </h4>
                 {loadingComments ? (

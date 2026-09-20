@@ -48,7 +48,7 @@ export default function SearchPage() {
           <h2 className="font-display font-bold text-xl text-[var(--text-main)]">
             {t('searchTitle')}
           </h2>
-          <div className="flex items-center gap-1.5 text-[11px] font-mono text-sub">
+          <div className="flex items-center gap-1.5 text-[11px] font-display text-sub">
             <Shield size={13} className="text-[#8FBC94]" />
             <span>Zero-tracking search</span>
           </div>
@@ -112,11 +112,10 @@ export default function SearchPage() {
                       className="w-11 h-11 rounded-full object-cover ring-2 ring-[var(--card-border)]"
                     />
                     <span
-                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-[var(--bg)] ${
-                        online
+                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-[var(--bg)] ${online
                           ? 'bg-[#8FBC94] shadow-[0_0_6px_rgba(143,188,148,0.8)]'
                           : 'bg-[#8FA6B0] opacity-50'
-                      }`}
+                        }`}
                     />
                   </Link>
                   <div className="flex-1 min-w-0">
@@ -130,7 +129,7 @@ export default function SearchPage() {
                         style={{ color: '#8FBC94' }}
                       />
                     </Link>
-                    <p className="text-xs text-sub truncate font-mono">@{u.username}</p>
+                    <p className="text-xs text-sub truncate font-display">@{u.username}</p>
                   </div>
                   <Link
                     to={userPath}

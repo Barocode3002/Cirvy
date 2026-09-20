@@ -92,7 +92,7 @@ export default function LoginPage() {
       <header className="flex items-center justify-between py-2">
         <div className="flex items-center gap-2">
           <CirvyLogo variant="icon" size={30} showGlow />
-          <span className="text-xs font-mono font-bold tracking-wider text-[var(--text-main)] uppercase">
+          <span className="text-l font-display font-extrabold tracking-wider text-[var(--text-main)] uppercase">
             {t('brand')}
           </span>
         </div>
@@ -100,7 +100,7 @@ export default function LoginPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={toggleLang}
-            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-mono font-bold scale-tap hover:border-[#4A7A8C] cursor-pointer"
+            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-display font-bold scale-tap hover:border-[#4A7A8C] cursor-pointer"
             title="Toggle Language"
           >
             <span>{lang === 'ar' ? 'EN' : 'AR'}</span>
@@ -120,17 +120,17 @@ export default function LoginPage() {
       <main className="flex-1 flex flex-col justify-center py-4 view">
         {/* Brand Hero */}
         <div className="text-center mb-6 flex flex-col items-center">
-          <CirvyLogo variant="full" size={44} className="mb-3" />
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono font-semibold tracking-wide bg-[#8FBC94]/15 text-[#8FBC94] border border-[#8FBC94]/30 mb-3">
+          <CirvyLogo variant="icon" size={44} className="mb-3" />
+          {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-display font-bold uppercase tracking-[0.16em] bg-[#8FBC94]/15 text-[#8FBC94] border border-[#8FBC94]/30 mb-3">
             <span className="w-1.5 h-1.5 rounded-full bg-[#8FBC94]" />
-            <span>{t('shieldLabel')}</span>
-          </div>
-          <h1 className="font-display font-black text-xl md:text-2xl text-[var(--text-main)] max-w-sm leading-tight">
-            {t('authHeadline')}
+             <span>{t('shieldLabel')}</span>
+          </div> */}
+          <h1 className="font-display font-bold text-xl md:text-2xl text-[var(--text-main)] max-w-sm leading-tight tracking-tight">
+            {t('loginAuthHeadline')}
           </h1>
-          <p className="text-sub text-xs md:text-sm mt-1 max-w-xs">
+          {/* <p className="font-display italic text-sub text-sm md:text-base mt-1.5 max-w-xs">
             {t('authSub')}
-          </p>
+          </p> */}
         </div>
 
         {/* Card */}
@@ -138,7 +138,7 @@ export default function LoginPage() {
           {/* Tabs */}
           <div className="flex mb-6 rounded-2xl p-1 field">
             <button
-              onClick={() => {}}
+              onClick={() => { }}
               className="flex-1 py-2 rounded-xl text-xs md:text-sm font-bold transition-all accent-bg text-[#F5F7F8] dark:text-[#10181C]"
             >
               {t('signIn')}
@@ -222,14 +222,14 @@ export default function LoginPage() {
 
           <div className="flex items-center gap-3 my-5">
             <div className="h-px flex-1 bg-[var(--card-border)]" />
-            <span className="text-[10px] font-mono text-sub uppercase tracking-wider">
+            <span className="text-[10px] font-display text-sub uppercase tracking-wider">
               {t('orContinue')}
             </span>
             <div className="h-px flex-1 bg-[var(--card-border)]" />
           </div>
 
           <div className="flex flex-col gap-3">
-          <button
+            <button
               type="button"
               onClick={() => handleOAuth('google')}
               className="w-full field rounded-2xl py-4 flex items-center justify-center gap-3 text-base font-semibold scale-tap hover:border-[#4A7A8C] transition-all cursor-pointer"

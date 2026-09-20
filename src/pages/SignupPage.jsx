@@ -149,7 +149,7 @@ export default function SignupPage() {
       <header className="flex items-center justify-between py-2">
         <div className="flex items-center gap-2">
           <CirvyLogo variant="icon" size={30} showGlow />
-          <span className="text-xs font-mono font-bold tracking-wider text-[var(--text-main)] uppercase">
+          <span className="text-l font-display font-extrabold tracking-wider text-[var(--text-main)] uppercase">
             {t('brand')}
           </span>
         </div>
@@ -157,7 +157,7 @@ export default function SignupPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={toggleLang}
-            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-mono font-bold scale-tap hover:border-[#4A7A8C] cursor-pointer"
+            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-display font-bold scale-tap hover:border-[#4A7A8C] cursor-pointer"
             title="Toggle Language"
           >
             <span>{lang === 'ar' ? 'EN' : 'AR'}</span>
@@ -177,13 +177,13 @@ export default function SignupPage() {
       <main className="flex-1 flex flex-col justify-center py-4 view">
         {/* Brand Hero */}
         <div className="text-center mb-6 flex flex-col items-center">
-          <CirvyLogo variant="full" size={44} className="mb-3" />
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono font-semibold tracking-wide bg-[#8FBC94]/15 text-[#8FBC94] border border-[#8FBC94]/30 mb-3">
+          <CirvyLogo variant="icon" size={44} className="mb-3" />
+          {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-display font-semibold tracking-wide bg-[#8FBC94]/15 text-[#8FBC94] border border-[#8FBC94]/30 mb-3">
             <span className="w-1.5 h-1.5 rounded-full bg-[#8FBC94]" />
             <span>{t('shieldLabel')}</span>
-          </div>
-          <h1 className="font-display font-black text-xl md:text-2xl text-[var(--text-main)] max-w-sm leading-tight">
-            {isOtpStep ? (t('verifyEmail') || 'Verify your email') : t('authHeadline')}
+          </div> */}
+          <h1 className="font-display font-bold text-xl md:text-2xl text-[var(--text-main)] max-w-sm leading-tight">
+            {isOtpStep ? (t('verifyEmail') || 'Verify your email') : t('SignupAuthHeadline')}
           </h1>
           <p className="text-sub text-xs md:text-sm mt-1 max-w-xs">
             {isOtpStep
@@ -209,7 +209,7 @@ export default function SignupPage() {
                   <ArrowLeft size={14} />
                   <span>{t('backToSignup') || 'Change email'}</span>
                 </button>
-                <span className="text-[11px] font-mono text-sub">{form.email}</span>
+                <span className="text-[11px] font-display text-sub">{form.email}</span>
               </div>
 
               {error && (
@@ -235,7 +235,7 @@ export default function SignupPage() {
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.trim())}
                       placeholder="••••••••"
-                      className="field w-full rounded-2xl py-3.5 text-center text-xl md:text-2xl font-mono tracking-[0.25em] md:tracking-[0.35em] font-bold outline-none focus:border-[#4A7A8C]"
+                      className="field w-full rounded-2xl py-3.5 text-center text-xl md:text-2xl font-display tracking-[0.25em] md:tracking-[0.35em] font-bold outline-none focus:border-[#4A7A8C]"
                     />
                   </div>
                 </div>
@@ -279,7 +279,7 @@ export default function SignupPage() {
                   {t('signIn')}
                 </button>
                 <button
-                  onClick={() => {}}
+                  onClick={() => { }}
                   className="flex-1 py-2 rounded-xl text-xs md:text-sm font-bold transition-all accent-bg text-[#F5F7F8] dark:text-[#10181C]"
                 >
                   {t('signUp')}
@@ -319,7 +319,7 @@ export default function SignupPage() {
                     {t('username')}
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sub text-xs font-mono font-bold rtl:left-auto rtl:right-3.5">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sub text-xs font-display font-bold rtl:left-auto rtl:right-3.5">
                       @
                     </span>
                     <input
@@ -329,7 +329,7 @@ export default function SignupPage() {
                       required
                       value={form.username}
                       onChange={handleChange}
-                      className="field w-full rounded-2xl pl-9 pr-4 py-2.5 text-sm rtl:pl-4 rtl:pr-9 font-mono outline-none focus:border-[#4A7A8C]"
+                      className="field w-full rounded-2xl pl-9 pr-4 py-2.5 text-sm rtl:pl-4 rtl:pr-9 font-display outline-none focus:border-[#4A7A8C]"
                       placeholder="username"
                       autoComplete="username"
                     />
@@ -389,7 +389,7 @@ export default function SignupPage() {
 
               <div className="flex items-center gap-3 my-5">
                 <div className="h-px flex-1 bg-[var(--card-border)]" />
-                <span className="text-[10px] font-mono text-sub uppercase tracking-wider">
+                <span className="text-[10px] font-display text-sub uppercase tracking-wider">
                   {t('orContinue')}
                 </span>
                 <div className="h-px flex-1 bg-[var(--card-border)]" />
@@ -397,12 +397,12 @@ export default function SignupPage() {
 
               <div className="flex flex-col gap-3">
                 <button
-                    type="button"
-                    onClick={() => handleOAuth('google')}
-                    className="w-full field rounded-2xl py-4 flex items-center justify-center gap-3 text-base font-semibold scale-tap hover:border-[#4A7A8C] transition-all cursor-pointer"
-                  >
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5" /> Google
-                  </button>
+                  type="button"
+                  onClick={() => handleOAuth('google')}
+                  className="w-full field rounded-2xl py-4 flex items-center justify-center gap-3 text-base font-semibold scale-tap hover:border-[#4A7A8C] transition-all cursor-pointer"
+                >
+                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5" /> Google
+                </button>
                 {/* {isAppleDevice && (
                   <button
                     type="button"

@@ -7,8 +7,9 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const dict = {
   en: {
     brand: 'Cirvy',
-    shieldLabel: 'ZERO-TRACKING SHIELD · ON',
-    authHeadline: 'Built for people the internet already watches.',
+    // shieldLabel: 'ZERO-TRACKING SHIELD · ON',
+    loginAuthHeadline: 'Welcome back to Cirvy',
+    SignupAuthHeadline: 'Hello, welcome to Cirvy',
     authSub: 'No trackers. No ad profiles. No public leaks — just your circle.',
     signIn: 'Sign In',
     signUp: 'Sign Up',
@@ -43,7 +44,7 @@ const dict = {
     privacyBanner: 'Your searches are never stored or tracked for targeted ads. Cirvy Shield discards every query the moment results are shown.',
     privateProfile: 'Private Profile',
     ghostActive: 'Ghost Mode Active',
-    bio: 'Actor · storyteller · here for the people who already know me. Fan requests reviewed manually 🤍',
+    bio: 'Storyteller and creator. Connected only with people I know in real life.',
     postsLabel: 'Posts',
     friendsLabel: 'Friends',
     trustLabel: 'Trust Score',
@@ -200,7 +201,10 @@ const UIContext = createContext(null)
 export function UIProvider({ children }) {
   const [lang, setLang] = useState('en')
   const [dark, setDark] = useState(() => window.localStorage.getItem('cirvy-theme') === 'dark')
-  const [ghostMode, setGhostMode] = useState(true)
+  const [ghostMode, setGhostMode] = useState(() => {
+    const saved = window.localStorage.getItem('cirvy-ghost-mode')
+    return saved !== null ? saved === 'true' : false
+  })
   const [watermark, setWatermark] = useState(false)
   const [panicLocked, setPanicLocked] = useState(false)
   const [panicTaps, setPanicTaps] = useState(0)
@@ -212,6 +216,10 @@ export function UIProvider({ children }) {
     document.documentElement.classList.toggle('dark', dark)
     window.localStorage.setItem('cirvy-theme', dark ? 'dark' : 'light')
   }, [dark])
+
+  useEffect(() => {
+    window.localStorage.setItem('cirvy-ghost-mode', ghostMode ? 'true' : 'false')
+  }, [ghostMode])
 
   useEffect(() => {
     document.documentElement.lang = lang
@@ -307,10 +315,10 @@ export function UIProvider({ children }) {
       {panicLocked && (
         <div className="fixed inset-0 z-[200] bg-ink-950 flex flex-col items-center justify-center text-center px-8">
           <i className="fa-solid fa-calculator text-4xl text-ink-500 mb-4" />
-          <p className="text-ink-500 font-mono text-sm">0</p>
+          <p className="text-ink-500 font-display text-sm">0</p>
           <button
             onClick={handlePanicTap}
-            className="mt-10 text-[11px] tracking-widest uppercase text-ink-700 font-mono scale-tap cursor-pointer"
+            className="mt-10 text-[11px] tracking-widest uppercase text-ink-700 font-display scale-tap cursor-pointer"
           >
             tap five times to unlock ({panicTaps}/5)
           </button>

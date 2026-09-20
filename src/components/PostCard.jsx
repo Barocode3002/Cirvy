@@ -1,11 +1,8 @@
-// src/components/PostCard.jsx
-// Renders feed posts matching the HTML layout and schema.
-
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useUI } from '@/contexts/UIContext'
-import { Heart, MessageSquare, Send, MoreHorizontal, EyeOff, Shield, Trash2, Edit3 } from 'lucide-react'
+import { Heart, MessageSquare, Send, MoreHorizontal, EyeOff, Shield, Trash2, Edit3, BarChart2, CheckCircle2 } from 'lucide-react'
 
 export default function PostCard({ post, currentUserId, onPostUpdated }) {
   const { t, showToast } = useUI()
@@ -21,6 +18,12 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
   const [loadingComments, setLoadingComments] = useState(false)
   const [submittingComment, setSubmittingComment] = useState(false)
 
+  // ---- Poll ----
+  const [poll, setPoll] = useState(post.poll || null)
+  const [pollVotes, setPollVotes] = useState([])
+  const [userVotedIndex, setUserVotedIndex] = useState(null)
+  const [voting, setVoting] = useState(false)
+
   // ---- Menu Modals ----
   const [showMenu, setShowMenu] = useState(false)
   const [showAudienceModal, setShowAudienceModal] = useState(false)
@@ -34,6 +37,13 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
 
   useEffect(() => {
     loadLikes()
+
+    if (post.poll) {
+      setPoll(post.poll)
+      loadVotes(post.poll.id)
+    } else {
+      loadPoll()
+    }
 
     async function loadLikes() {
       const { count } = await supabase
@@ -52,7 +62,69 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
         setLiked(!!data)
       }
     }
-  }, [post.id, currentUserId])
+  }, [post.id, post.poll, currentUserId])
+
+  async function loadVotes(pollId) {
+    if (!pollId) return
+    try {
+      const { data: votes } = await supabase
+        .from('poll_votes')
+        .select('option_index, user_id')
+        .eq('poll_id', pollId)
+
+      if (votes) {
+        setPollVotes(votes)
+        const myVote = votes.find((v) => v.user_id === currentUserId)
+        if (myVote !== undefined) setUserVotedIndex(myVote.option_index)
+      }
+    } catch {
+      // Ignored
+    }
+  }
+
+  async function loadPoll() {
+    try {
+      const { data: pollData } = await supabase
+        .from('polls')
+        .select('id, question, options')
+        .eq('post_id', post.id)
+        .maybeSingle()
+
+      if (pollData) {
+        setPoll(pollData)
+        await loadVotes(pollData.id)
+      }
+    } catch {
+      // Ignored
+    }
+  }
+
+  async function handleVote(optionIndex) {
+    if (!currentUserId || !poll || voting) return
+    setVoting(true)
+    try {
+      const { error } = await supabase.from('poll_votes').upsert(
+        {
+          poll_id: poll.id,
+          user_id: currentUserId,
+          option_index: optionIndex,
+        },
+        { onConflict: 'poll_id,user_id' }
+      )
+      if (!error) {
+        setUserVotedIndex(optionIndex)
+        setPollVotes((prev) => [
+          ...prev.filter((v) => v.user_id !== currentUserId),
+          { poll_id: poll.id, user_id: currentUserId, option_index: optionIndex },
+        ])
+        showToast('Vote recorded')
+      }
+    } catch {
+      showToast('Could not record vote')
+    } finally {
+      setVoting(false)
+    }
+  }
 
   async function toggleLike() {
     if (liked) {
@@ -170,10 +242,6 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                 className="text-sm font-bold flex items-center gap-1.5 hover:underline text-[var(--text-main)]"
               >
                 <span>{author.display_name || 'User'}</span>
-                <i
-                  className="fa-solid fa-badge-check text-[11px]"
-                  style={{ color: '#8FBC94' }}
-                />
               </Link>
               <p className="text-[11px] text-sub mt-0.5">
                 @{author.username || 'user'} · {timeAgo}
@@ -190,17 +258,42 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
           </button>
         </div>
 
-        {/* Post Image */}
-        {post.image_url && (
-          <div className="w-full bg-[var(--card-border)]/20 overflow-hidden">
-            <img
-              src={post.image_url}
-              alt="Post media"
-              className="w-full max-h-[32rem] object-contain"
-              loading="lazy"
-            />
-          </div>
-        )}
+        {/* Post Video or Image */}
+        {(() => {
+          const videoSrc =
+            post.video_url ||
+            (post.image_url &&
+              (post.image_url.match(/\.(mp4|webm|ogg|mov)$/i) ||
+                post.image_url.startsWith('data:video/'))
+              ? post.image_url
+              : null)
+          const imageSrc = !videoSrc ? post.image_url : null
+
+          return (
+            <>
+              {videoSrc && (
+                <div className="w-full bg-black/40 overflow-hidden">
+                  <video
+                    src={videoSrc}
+                    controls
+                    playsInline
+                    className="w-full max-h-[32rem] object-contain"
+                  />
+                </div>
+              )}
+              {imageSrc && (
+                <div className="w-full bg-[var(--card-border)]/20 overflow-hidden">
+                  <img
+                    src={imageSrc}
+                    alt="Post media"
+                    className="w-full max-h-[32rem] object-contain"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+            </>
+          )
+        })()}
 
         {/* Post Body & Actions */}
         <div className="px-5 py-4">
@@ -274,12 +367,76 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-[var(--text-main)] leading-relaxed whitespace-pre-wrap">
-              <span className="font-bold mr-1.5">
-                @{author.username || 'user'}
-              </span>
-              {post.content}
-            </p>
+            <div>
+              {post.content && (
+                <p className="text-sm text-[var(--text-main)] leading-relaxed whitespace-pre-wrap">
+                  <span className="font-bold mr-1.5">
+                    @{author.username || 'user'}
+                  </span>
+                  {post.content}
+                </p>
+              )}
+
+              {/* Interactive Poll Card */}
+              {poll && (
+                <div className="mt-3.5 rounded-2xl field p-4 border border-[var(--card-border)] space-y-3 bg-[var(--card-border)]/10">
+                  <div className="flex items-center gap-2">
+                    <BarChart2 size={16} className="text-[#8FBC94]" />
+                    <h4 className="text-sm font-bold text-[var(--text-main)]">
+                      {poll.question}
+                    </h4>
+                  </div>
+                  <div className="space-y-2">
+                    {poll.options?.map((opt, idx) => {
+                      const total = pollVotes.length
+                      const count = pollVotes.filter((v) => v.option_index === idx).length
+                      const pct = total > 0 ? Math.round((count / total) * 100) : 0
+                      const isSelected = userVotedIndex === idx
+                      const hasVoted = userVotedIndex !== null
+
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          disabled={voting}
+                          onClick={() => handleVote(idx)}
+                          className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition scale-tap cursor-pointer ${isSelected
+                              ? 'border-[#4A7A8C] bg-[#4A7A8C]/15 font-semibold text-[var(--text-main)]'
+                              : 'border-[var(--card-border)] bg-[var(--bg)]/60 hover:border-[#4A7A8C]/50 text-[var(--text-main)]'
+                            }`}
+                        >
+                          {hasVoted && (
+                            <div
+                              className="absolute inset-y-0 left-0 bg-[#4A7A8C]/20 transition-all duration-500 pointer-events-none"
+                              style={{ width: `${pct}%` }}
+                            />
+                          )}
+                          <div className="relative flex items-center justify-between text-xs z-10">
+                            <div className="flex items-center gap-2">
+                              {isSelected ? (
+                                <CheckCircle2 size={14} className="text-[#4A7A8C] dark:text-[#CFE3E9]" />
+                              ) : (
+                                <span className="w-3.5 h-3.5 rounded-full border border-sub/50 inline-block" />
+                              )}
+                              <span>{opt.text || opt}</span>
+                            </div>
+                            {hasVoted && (
+                              <span className="font-display text-[11px] font-bold text-sub">
+                                {pct}% ({count})
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-sub pt-1 font-display">
+                    <span>{pollVotes.length} {pollVotes.length === 1 ? 'vote' : 'votes'}</span>
+                    {userVotedIndex !== null && <span>Your vote is recorded</span>}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
