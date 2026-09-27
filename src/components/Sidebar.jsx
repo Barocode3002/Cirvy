@@ -225,12 +225,7 @@ export default function Sidebar({ side = 'left' }) {
       <div className="flex-1 flex flex-col min-h-0">
         {/* Brand Header */}
         <Link to="/feed" className="mb-6 flex items-center gap-2 group px-2">
-          <CirvyLogo variant="icon" size={32} showGlow />
-          <div>
-            <p className="text-xl sm:text-lg font-display font-extrabold tracking-tight text-[var(--text-main)]">
-              Cirvy
-            </p>
-          </div>
+          <CirvyLogo variant="full" size={26} />
         </Link>
 
         {/* Primary Navigation Group */}
@@ -241,7 +236,7 @@ export default function Sidebar({ side = 'left' }) {
               to={to}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-2xl px-4 py-2.5 text-xs font-semibold transition scale-tap ${isActive
-                  ? 'accent-bg text-[#F5F7F8] dark:text-[#10181C] shadow-sm'
+                  ? 'accent-bg text-white dark:text-[#070D0C] shadow-sm font-bold'
                   : 'text-sub hover:text-[var(--text-main)] hover:bg-[var(--card-border)]/40'
                 }`
               }
@@ -251,7 +246,7 @@ export default function Sidebar({ side = 'left' }) {
               </div>
               <span className="truncate">{label}</span>
               {badge > 0 && (
-                <span className="ms-auto rounded-full bg-[#8FBC94] text-[#10181C] px-1.5 py-0.5 text-[10px] font-bold font-display leading-none">
+                <span className="ms-auto rounded-full bg-[var(--accent)] text-white dark:text-[#070D0C] px-1.5 py-0.5 text-[10px] font-bold font-display leading-none">
                   {badge}
                 </span>
               )}
@@ -267,7 +262,7 @@ export default function Sidebar({ side = 'left' }) {
           to={profilePath}
           className={({ isActive }) =>
             `flex items-center gap-3 rounded-2xl px-4 py-2.5 text-xs font-semibold transition scale-tap ${isActive
-              ? 'accent-bg text-[#F5F7F8] dark:text-[#10181C] shadow-sm'
+              ? 'accent-bg text-white dark:text-[#070D0C] shadow-sm font-bold'
               : 'text-sub hover:text-[var(--text-main)] hover:bg-[var(--card-border)]/40'
             }`
           }
@@ -318,9 +313,9 @@ export default function Sidebar({ side = 'left' }) {
               className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-[var(--text-main)] hover:bg-[var(--card-border)]/40 transition scale-tap cursor-pointer text-left"
             >
               {dark ? (
-                <Sun size={16} className="text-[#8FBC94]" />
+                <Sun size={16} className="text-[var(--accent)]" />
               ) : (
-                <Moon size={16} className="text-[#4A7A8C]" />
+                <Moon size={16} className="text-[var(--accent)]" />
               )}
               <span>Switch appearance</span>
             </button>
@@ -337,10 +332,6 @@ export default function Sidebar({ side = 'left' }) {
             </button>
           </div>
         )}
-
-        <button className='bo'>
-
-        </button>
       </div>
     </aside>
   )

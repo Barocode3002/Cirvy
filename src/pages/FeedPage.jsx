@@ -161,9 +161,6 @@ export default function FeedPage() {
             <h1 className="text-2xl sm:text-3xl font-display font-extrabold tracking-tight text-[var(--text-main)]">
               Good to see you.
             </h1>
-            {/* <p className="mt-1 text-xs sm:text-sm font-serif italic text-sub">
-              A quiet place for the people who matter.
-            </p> */}
           </div>
           <div className="hidden items-center gap-2 rounded-full field px-3.5 py-1.5 text-xs font-semibold text-[var(--text-main)] sm:flex border border-[var(--card-border)]">
             <ShieldCheck size={14} className="accent-text" />
@@ -186,7 +183,7 @@ export default function FeedPage() {
 
         {/* Feed List */}
         {loading ? (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {[1, 2].map((n) => (
               <div
                 key={n}
@@ -206,11 +203,11 @@ export default function FeedPage() {
           </div>
         ) : posts.length === 0 ? (
           <div className="glass rounded-3xl p-10 text-center border border-[var(--card-border)]">
-            <div className="w-12 h-12 rounded-2xl bg-[#8FBC94]/15 flex items-center justify-center mx-auto mb-3 text-[#8FBC94]">
+            <div className="w-12 h-12 rounded-2xl accent-soft-bg flex items-center justify-center mx-auto mb-3 text-[var(--accent)]">
               <Sparkles size={22} />
             </div>
-            <p className="font-bold text-[var(--text-main)] text-sm">Your feed is quiet.</p>
-            <p className="mt-1 text-xs text-sub max-w-xs mx-auto">
+            <p className="font-display font-bold text-[var(--text-main)] text-sm">Your feed is quiet.</p>
+            <p className="mt-1 text-xs text-sub max-w-xs mx-auto font-body">
               Share a thought, video, photo, or poll with your trusted circle.
             </p>
           </div>

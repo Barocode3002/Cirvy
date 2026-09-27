@@ -382,14 +382,14 @@ export default function ProfilePage() {
     return (
       <AppShell>
         <div className="flex-1 flex items-center justify-center px-4 py-16">
-          <div className="glass rounded-3xl p-8 text-center max-w-xs w-full shadow-glass">
-            <div className="w-12 h-12 rounded-2xl bg-[#4A7A8C]/15 flex items-center justify-center mx-auto mb-3 text-sub">
+          <div className="glass rounded-3xl p-8 text-center max-w-xs w-full shadow-glass border border-[var(--card-border)]">
+            <div className="w-12 h-12 rounded-2xl accent-soft-bg flex items-center justify-center mx-auto mb-3 text-[var(--accent)]">
               <i className="fa-solid fa-magnifying-glass text-lg" />
             </div>
             <h3 className="font-display font-bold text-base mb-1 text-[var(--text-main)]">
               Profile not found
             </h3>
-            <p className="text-xs text-sub">@{rawParam.replace(/^@/, '')} does not exist on Cirvy.</p>
+            <p className="text-xs text-sub font-body">@{rawParam.replace(/^@/, '')} does not exist on Cirvy.</p>
           </div>
         </div>
       </AppShell>
@@ -415,7 +415,7 @@ export default function ProfilePage() {
             <>
               <button
                 onClick={() => navigate('/settings')}
-                className="w-9 h-9 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[#4A7A8C]"
+                className="w-9 h-9 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[var(--accent)]"
                 title="Settings"
                 aria-label="Settings"
               >
@@ -423,7 +423,7 @@ export default function ProfilePage() {
               </button>
               <button
                 onClick={() => setShowEditBio(true)}
-                className="w-9 h-9 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[#4A7A8C]"
+                className="w-9 h-9 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[var(--accent)]"
                 title="Edit Profile"
                 aria-label="Edit Profile"
               >
@@ -431,7 +431,7 @@ export default function ProfilePage() {
               </button>
               <button
                 onClick={handleLogout}
-                className="h-9 px-3.5 rounded-full field flex items-center gap-1.5 text-xs font-semibold text-sub hover:text-[var(--text-main)] hover:border-[#4A7A8C] scale-tap transition cursor-pointer"
+                className="h-9 px-3.5 rounded-full field flex items-center gap-1.5 text-xs font-semibold text-sub hover:text-[var(--text-main)] hover:border-[var(--accent)] scale-tap transition cursor-pointer"
                 title={t('logout')}
               >
                 <i className="fa-solid fa-arrow-right-from-bracket" />
@@ -449,7 +449,7 @@ export default function ProfilePage() {
                 profile.avatar_url ||
                 `https://ui-avatars.com/api/?name=${encodeURIComponent(
                   profile.display_name || 'U'
-                )}&background=4A7A8C&color=fff&size=150`
+                )}&background=00AFA0&color=fff&size=150`
               }
               alt=""
               className="w-24 h-24 rounded-full object-cover ring-4 ring-[var(--card-border)]"
@@ -457,14 +457,14 @@ export default function ProfilePage() {
             {/* Real Online/Offline Presence Indicator */}
             <span
               className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ring-2 ring-[var(--bg)] transition-colors ${userIsOnline
-                  ? 'bg-[#8FBC94] shadow-[0_0_8px_rgba(143,188,148,0.8)] animate-pulse'
+                  ? 'bg-[var(--accent)] shadow-[0_0_8px_rgba(0,175,160,0.8)] animate-pulse'
                   : 'bg-[#8FA6B0] opacity-60'
                 }`}
               title={userIsOnline ? 'Active now' : 'Offline'}
             />
           </div>
 
-          <h3 className="font-display font-bold text-xl mt-3 text-[var(--text-main)]">
+          <h3 className="font-display font-extrabold text-xl md:text-2xl mt-3 text-[var(--text-main)] tracking-tight">
             {profile.display_name}
           </h3>
           <p className="text-sub text-xs mt-0.5 font-display">@{profile.username}</p>
@@ -478,12 +478,12 @@ export default function ProfilePage() {
 
             <span
               className={`text-[11px] font-display px-3 py-1 rounded-full flex items-center gap-1.5 font-medium ${userIsOnline
-                  ? 'bg-[#8FBC94]/15 text-[#8FBC94] border border-[#8FBC94]/30'
+                  ? 'accent-soft-bg text-[var(--accent)] border border-[var(--accent)]/30'
                   : 'field text-sub'
                 }`}
             >
               <span
-                className={`w-1.5 h-1.5 rounded-full ${userIsOnline ? 'bg-[#8FBC94]' : 'bg-[#8FA6B0]'
+                className={`w-1.5 h-1.5 rounded-full ${userIsOnline ? 'bg-[var(--accent)]' : 'bg-[#8FA6B0]'
                   }`}
               />
               <span>{userIsOnline ? 'Active Now' : 'Offline'}</span>
@@ -491,7 +491,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Bio */}
-          <p className="text-sm text-sub mt-3.5 max-w-sm leading-relaxed px-2">
+          <p className="text-sm font-body text-sub mt-3.5 max-w-sm leading-relaxed px-2">
             {isFriend || isOwnProfile
               ? profile.bio || 'No bio yet.'
               : 'Bio is hidden. Connect to view full profile.'}
@@ -504,7 +504,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <div className="flex gap-10 mt-6 text-center border-y border-[var(--card-border)] py-3 px-6 rounded-2xl glass">
+          <div className="flex gap-10 mt-6 text-center border border-[var(--card-border)] py-3.5 px-8 rounded-2xl glass shadow-glass">
             <div>
               <p className="font-display font-bold text-base text-[var(--text-main)]">
                 {formatCount(postCount)}
@@ -536,7 +536,7 @@ export default function ProfilePage() {
         {isFriend ? (
           <div className="mt-7">
             {posts.length === 0 ? (
-              <div className="text-center text-sub text-xs py-12 glass rounded-3xl">
+              <div className="text-center text-sub text-xs py-12 glass rounded-3xl border border-[var(--card-border)]">
                 <div className="w-10 h-10 rounded-2xl bg-[var(--card-border)]/40 flex items-center justify-center mx-auto mb-3">
                   <i className="fa-regular fa-images text-xl opacity-60" />
                 </div>
@@ -563,13 +563,13 @@ export default function ProfilePage() {
                       </div>
                     )}
                     {/* Hover Overlay with Like Count */}
-                    <div className="absolute inset-0 bg-[#10181C]/60 backdrop-blur-[2px] transition-opacity duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 gap-3 text-[#F5F7F8]">
-                      <span className="flex items-center gap-1.5 text-xs font-bold">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 gap-3 text-white">
+                      <span className="flex items-center gap-1.5 text-xs font-bold font-display">
                         <Heart size={14} className="fill-current" />
                         <span>{formatCount(p.like_count || 0)}</span>
                       </span>
                       {p.comment_count > 0 && (
-                        <span className="flex items-center gap-1.5 text-xs font-bold">
+                        <span className="flex items-center gap-1.5 text-xs font-bold font-display">
                           <MessageSquare size={14} className="fill-current" />
                           <span>{formatCount(p.comment_count)}</span>
                         </span>
@@ -581,12 +581,12 @@ export default function ProfilePage() {
             )}
           </div>
         ) : (
-          <div className="mt-8 text-center p-8 glass rounded-3xl">
+          <div className="mt-8 text-center p-8 glass rounded-3xl border border-[var(--card-border)]">
             <i className="fa-solid fa-lock text-2xl text-sub mb-2" />
             <h4 className="font-display font-bold text-sm text-[var(--text-main)]">
               Posts are Private
             </h4>
-            <p className="text-xs text-sub mt-1 max-w-xs mx-auto">
+            <p className="text-xs text-sub mt-1 max-w-xs mx-auto font-body">
               Become accepted friends to see @{profile.username}&apos;s photos and thoughts.
             </p>
           </div>
@@ -600,7 +600,7 @@ export default function ProfilePage() {
             className="modal-backdrop absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setSelectedPost(null)}
           />
-          <div className="modal-panel relative glass w-full md:max-w-xl max-h-[90vh] rounded-t-3xl md:rounded-3xl p-0 z-10 flex flex-col overflow-hidden border shadow-2xl">
+          <div className="modal-panel relative glass w-full md:max-w-xl max-h-[90vh] rounded-t-3xl md:rounded-3xl p-0 z-10 flex flex-col overflow-hidden border border-[var(--card-border)] shadow-2xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--card-border)] bg-[var(--card-bg)]">
               <div className="flex items-center gap-2.5">
@@ -610,10 +610,10 @@ export default function ProfilePage() {
                       selectedPost.author?.avatar_url ||
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(
                         selectedPost.author?.display_name || 'U'
-                      )}&background=4A7A8C&color=fff`
+                      )}&background=00AFA0&color=fff`
                     }
                     alt=""
-                    className="w-8 h-8 rounded-full object-cover"
+                    className="w-8 h-8 rounded-full object-cover ring-2 ring-[var(--card-border)]"
                   />
                 </Link>
                 <div className="leading-tight">
@@ -623,14 +623,14 @@ export default function ProfilePage() {
                   >
                     {selectedPost.author?.display_name || 'User'}
                   </Link>
-                  <p className="text-[10px] text-sub">
+                  <p className="text-[10px] text-sub font-display">
                     @{selectedPost.author?.username} · {formatRelativeTime(selectedPost.created_at)}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedPost(null)}
-                className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap hover:border-[#4A7A8C] cursor-pointer"
+                className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap hover:border-[var(--accent)] cursor-pointer"
                 aria-label="Close"
               >
                 <X size={15} />
@@ -671,7 +671,7 @@ export default function ProfilePage() {
                       size={17}
                       className={
                         selectedPostLiked
-                          ? 'fill-[#4A7A8C] text-[#4A7A8C] dark:fill-[#CFE3E9] dark:text-[#CFE3E9]'
+                          ? 'fill-[var(--accent)] text-[var(--accent)]'
                           : 'text-sub'
                       }
                     />
@@ -706,7 +706,7 @@ export default function ProfilePage() {
                             c.user?.avatar_url ||
                             `https://ui-avatars.com/api/?name=${encodeURIComponent(
                               c.user?.display_name || 'U'
-                            )}&background=4A7A8C&color=fff`
+                            )}&background=00AFA0&color=fff`
                           }
                           alt=""
                           className="w-7 h-7 rounded-full object-cover mt-0.5"
@@ -742,12 +742,12 @@ export default function ProfilePage() {
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
                 placeholder="Add a comment..."
-                className="field flex-1 rounded-full px-4 py-2.5 text-xs outline-none focus:border-[#4A7A8C]"
+                className="field flex-1 rounded-full px-4 py-2.5 text-xs outline-none focus:border-[var(--accent)]"
               />
               <button
                 type="submit"
                 disabled={!commentInput.trim() || submittingComment}
-                className="accent-bg text-[#F5F7F8] dark:text-[#10181C] px-4 py-2.5 rounded-full text-xs font-bold scale-tap disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                className="accent-bg text-white dark:text-[#070D0C] px-4 py-2.5 rounded-full text-xs font-bold font-display scale-tap disabled:opacity-50 cursor-pointer flex items-center gap-1"
               >
                 <Send size={13} />
                 <span>{submittingComment ? '...' : 'Send'}</span>
@@ -764,14 +764,14 @@ export default function ProfilePage() {
             className="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowEditBio(false)}
           />
-          <div className="modal-panel relative glass w-full md:w-96 rounded-t-3xl md:rounded-3xl p-5 z-10 border shadow-2xl">
+          <div className="modal-panel relative glass w-full md:w-96 rounded-t-3xl md:rounded-3xl p-5 z-10 border border-[var(--card-border)] shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display font-bold text-lg text-[var(--text-main)]">
                 Edit Profile
               </h3>
               <button
                 onClick={() => setShowEditBio(false)}
-                className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap hover:border-[#4A7A8C] cursor-pointer"
+                className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap hover:border-[var(--accent)] cursor-pointer"
               >
                 <X size={15} />
               </button>
@@ -779,7 +779,7 @@ export default function ProfilePage() {
 
             <form onSubmit={handleSaveBio} className="space-y-4">
               <div>
-                <span className="mb-2 block text-xs font-semibold text-[var(--text-main)]">
+                <span className="mb-2 block text-xs font-display font-semibold text-[var(--text-main)]">
                   Profile Picture
                 </span>
                 <div className="flex items-center gap-3 rounded-2xl field p-3">
@@ -789,13 +789,13 @@ export default function ProfilePage() {
                       profile.avatar_url ||
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(
                         profile.display_name || 'U'
-                      )}&background=4A7A8C&color=F5F7F8`
+                      )}&background=00AFA0&color=fff`
                     }
                     alt="Profile preview"
                     className="h-14 w-14 rounded-full object-cover ring-2 ring-[var(--card-border)]"
                   />
                   <div className="min-w-0 flex-1">
-                    <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full accent-bg px-3 text-xs font-bold text-[#F5F7F8] dark:text-[#10181C] hover:opacity-90 scale-tap">
+                    <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full accent-bg px-3 text-xs font-bold font-display text-white dark:text-[#070D0C] hover:opacity-90 scale-tap">
                       <Image size={13} />
                       <span>{avatarFile ? 'Replace picture' : 'Choose picture'}</span>
                       <input
@@ -822,7 +822,7 @@ export default function ProfilePage() {
                 {avatarError && (
                   <p
                     role="alert"
-                    className="mt-2 rounded-xl field px-3 py-1.5 text-xs font-semibold text-[var(--text-main)]"
+                    className="mt-2 rounded-xl field px-3 py-1.5 text-xs font-semibold text-red-500 border-red-500/30"
                   >
                     {avatarError}
                   </p>
@@ -830,7 +830,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[var(--text-main)] mb-1.5">
+                <label className="block text-xs font-display font-semibold text-[var(--text-main)] mb-1.5">
                   Bio
                 </label>
                 <textarea
@@ -838,7 +838,7 @@ export default function ProfilePage() {
                   onChange={(e) => setBioInput(e.target.value)}
                   rows={3}
                   placeholder="Share a short bio with your circle..."
-                  className="field w-full rounded-2xl p-3 text-sm resize-none outline-none focus:border-[#4A7A8C]"
+                  className="field w-full rounded-2xl p-3 text-sm resize-none outline-none focus:border-[var(--accent)]"
                   autoFocus
                 />
               </div>
@@ -854,7 +854,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={savingBio}
-                  className="accent-bg text-[#F5F7F8] dark:text-[#10181C] px-5 py-2 rounded-full text-xs font-bold scale-tap disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                  className="accent-bg text-white dark:text-[#070D0C] px-5 py-2 rounded-full text-xs font-bold font-display scale-tap disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                 >
                   {savingBio && (
                     <i className="fa-solid fa-circle-notch fa-spin mr-1" />

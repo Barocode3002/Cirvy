@@ -199,7 +199,7 @@ export default function SettingsPage() {
                   placeholder="Search settings..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-2xl field pl-9 pr-3.5 py-2 text-xs text-[var(--text-main)] outline-none focus:border-[#4A7A8C]"
+                  className="w-full rounded-2xl field pl-9 pr-3.5 py-2 text-xs text-[var(--text-main)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
 
@@ -219,7 +219,7 @@ export default function SettingsPage() {
                           type="button"
                           onClick={() => setActiveTab(item.id)}
                           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition scale-tap text-left cursor-pointer ${isActive
-                              ? 'accent-bg text-[#F5F7F8] dark:text-[#10181C] shadow-sm'
+                              ? 'accent-bg text-white dark:text-[#070D0C] shadow-sm font-bold'
                               : 'text-sub hover:text-[var(--text-main)] hover:bg-[var(--card-border)]/40'
                             }`}
                         >
@@ -252,7 +252,7 @@ export default function SettingsPage() {
             {activeTab === 'edit_profile' && (
               <div className="space-y-6 max-w-xl">
                 <div>
-                  <h2 className="text-xl font-bold text-[var(--text-main)]">Edit Profile</h2>
+                  <h2 className="text-xl font-display font-bold text-[var(--text-main)]">Edit Profile</h2>
                   <p className="text-xs text-sub mt-0.5">
                     Update your display name, username, bio, and avatar.
                   </p>
@@ -266,13 +266,13 @@ export default function SettingsPage() {
                         avatarUrl ||
                         `https://ui-avatars.com/api/?name=${encodeURIComponent(
                           displayName || 'You'
-                        )}&background=4A7A8C&color=F5F7F8`
+                        )}&background=00AFA0&color=fff`
                       }
                       alt="Avatar preview"
                       className="w-14 h-14 rounded-full object-cover ring-2 ring-[var(--card-border)]"
                     />
                     <div className="space-y-1">
-                      <label className="inline-flex items-center gap-1.5 accent-bg text-[#F5F7F8] dark:text-[#10181C] text-xs font-bold px-3.5 py-1.5 rounded-full scale-tap cursor-pointer">
+                      <label className="inline-flex items-center gap-1.5 accent-bg text-white dark:text-[#070D0C] text-xs font-bold font-display px-3.5 py-1.5 rounded-full scale-tap cursor-pointer">
                         <Camera size={13} />
                         <span>Change photo</span>
                         <input
@@ -288,7 +288,7 @@ export default function SettingsPage() {
 
                   {/* Display Name */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[var(--text-main)]">
+                    <label className="text-xs font-display font-bold text-[var(--text-main)]">
                       Display Name
                     </label>
                     <input
@@ -297,13 +297,13 @@ export default function SettingsPage() {
                       onChange={(e) => setDisplayName(e.target.value)}
                       placeholder="Your name"
                       required
-                      className="w-full rounded-2xl field px-4 py-2.5 text-xs text-[var(--text-main)] outline-none focus:border-[#4A7A8C]"
+                      className="w-full rounded-2xl field px-4 py-2.5 text-xs text-[var(--text-main)] outline-none focus:border-[var(--accent)]"
                     />
                   </div>
 
                   {/* Username */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-[var(--text-main)]">
+                    <label className="text-xs font-display font-bold text-[var(--text-main)]">
                       Username
                     </label>
                     <div className="relative">
@@ -316,7 +316,7 @@ export default function SettingsPage() {
                         onChange={(e) => setUsername(e.target.value)}
                         placeholder="username"
                         required
-                        className="w-full rounded-2xl field pl-8 pr-4 py-2.5 text-xs text-[var(--text-main)] font-display outline-none focus:border-[#4A7A8C]"
+                        className="w-full rounded-2xl field pl-8 pr-4 py-2.5 text-xs text-[var(--text-main)] font-display outline-none focus:border-[var(--accent)]"
                       />
                     </div>
                   </div>
@@ -324,7 +324,7 @@ export default function SettingsPage() {
                   {/* Bio */}
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center">
-                      <label className="text-xs font-bold text-[var(--text-main)]">Bio</label>
+                      <label className="text-xs font-display font-bold text-[var(--text-main)]">Bio</label>
                       <span className="text-[11px] font-display text-sub">{bio.length}/150</span>
                     </div>
                     <textarea
@@ -333,7 +333,7 @@ export default function SettingsPage() {
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       placeholder="Share a short bio visible only to your accepted friends..."
-                      className="w-full rounded-2xl field p-3.5 text-xs text-[var(--text-main)] outline-none focus:border-[#4A7A8C] resize-none"
+                      className="w-full rounded-2xl field p-3.5 text-xs text-[var(--text-main)] outline-none focus:border-[var(--accent)] resize-none"
                     />
                     <p className="text-[11px] text-sub">
                       Cirvy privacy rule: Bio is encrypted and strictly visible to accepted friends only.
@@ -341,13 +341,13 @@ export default function SettingsPage() {
                   </div>
 
                   {profileMsg && (
-                    <p className="text-xs font-semibold text-[#8FBC94]">{profileMsg}</p>
+                    <p className="text-xs font-semibold text-[var(--accent)]">{profileMsg}</p>
                   )}
 
                   <button
                     type="submit"
                     disabled={savingProfile}
-                    className="accent-bg text-[#F5F7F8] dark:text-[#10181C] px-6 py-2.5 rounded-full text-xs font-bold scale-tap transition disabled:opacity-50 cursor-pointer shadow-sm"
+                    className="accent-bg text-white dark:text-[#070D0C] px-6 py-2.5 rounded-full text-xs font-bold font-display scale-tap transition disabled:opacity-50 cursor-pointer shadow-sm"
                   >
                     {savingProfile ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -359,7 +359,7 @@ export default function SettingsPage() {
             {activeTab === 'appearance' && (
               <div className="space-y-6 max-w-xl">
                 <div>
-                  <h2 className="text-xl font-bold text-[var(--text-main)]">Appearance</h2>
+                  <h2 className="text-xl font-display font-bold text-[var(--text-main)]">Appearance</h2>
                   <p className="text-xs text-sub mt-0.5">
                     Customize how Cirvy looks on your device.
                   </p>
@@ -368,16 +368,16 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between p-4 rounded-2xl field">
                   <div className="flex items-center gap-3">
                     {dark ? (
-                      <Moon size={20} className="text-[#8FBC94]" />
+                      <Moon size={20} className="text-[var(--accent)]" />
                     ) : (
-                      <Sun size={20} className="text-[#4A7A8C]" />
+                      <Sun size={20} className="text-[var(--accent)]" />
                     )}
                     <div>
                       <p className="text-sm font-semibold text-[var(--text-main)]">Dark Mode</p>
                       <p className="text-xs text-sub">
                         {dark
-                          ? 'Using Deep Dusk palette (#10181C)'
-                          : 'Using Digital Air palette (#F5F7F8)'}
+                          ? 'Using dark palette (#070D0C / #0D1A19)'
+                          : 'Using light palette (#F0FAF9 / #FFFFFF)'}
                       </p>
                     </div>
                   </div>
@@ -395,7 +395,7 @@ export default function SettingsPage() {
             {activeTab === 'account_info' && (
               <div className="space-y-6 max-w-xl">
                 <div>
-                  <h2 className="text-xl font-bold text-[var(--text-main)]">Account Information</h2>
+                  <h2 className="text-xl font-display font-bold text-[var(--text-main)]">Account Information</h2>
                   <p className="text-xs text-sub mt-0.5">
                     Your authenticated Cirvy account details.
                   </p>
@@ -414,7 +414,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="p-4 rounded-2xl field space-y-1">
                     <p className="text-[10px] font-display uppercase text-sub font-bold">Security Level</p>
-                    <p className="text-xs font-semibold text-[#8FBC94] flex items-center gap-1.5">
+                    <p className="text-xs font-semibold text-[var(--accent)] flex items-center gap-1.5">
                       <Check size={14} />
                       <span>Zero-Tracking Shield Active</span>
                     </p>
@@ -427,18 +427,18 @@ export default function SettingsPage() {
             {activeTab === 'account_privacy' && (
               <div className="space-y-6 max-w-xl">
                 <div>
-                  <h2 className="text-xl font-bold text-[var(--text-main)]">Account Privacy</h2>
+                  <h2 className="text-xl font-display font-bold text-[var(--text-main)]">Account Privacy</h2>
                   <p className="text-xs text-sub mt-0.5">
                     Cirvy privacy guarantees and access controls.
                   </p>
                 </div>
 
-                <div className="p-5 rounded-2xl field space-y-3 border border-[#8FBC94]/30 bg-[#8FBC94]/5">
-                  <div className="flex items-center gap-2 text-[#8FBC94]">
+                <div className="p-5 rounded-2xl field space-y-3 border border-[var(--accent)]/30 bg-[var(--accent)]/5">
+                  <div className="flex items-center gap-2 text-[var(--accent)]">
                     <Shield size={18} />
-                    <p className="text-sm font-bold">Private by Default</p>
+                    <p className="text-sm font-bold font-display">Private by Default</p>
                   </div>
-                  <p className="text-xs text-sub leading-relaxed">
+                  <p className="text-xs text-sub leading-relaxed font-body">
                     Your posts, videos, polls, and bio are never indexed, crawled, or shown to strangers.
                     Only friends you explicitly accept can view your content.
                   </p>
@@ -450,7 +450,7 @@ export default function SettingsPage() {
             {activeTab === 'ghost_mode' && (
               <div className="space-y-6 max-w-xl">
                 <div>
-                  <h2 className="text-xl font-bold text-[var(--text-main)]">Ghost Mode</h2>
+                  <h2 className="text-xl font-display font-bold text-[var(--text-main)]">Ghost Mode</h2>
                   <p className="text-xs text-sub mt-0.5">
                     Browse without revealing your active online status.
                   </p>
@@ -458,12 +458,12 @@ export default function SettingsPage() {
 
                 <div className="flex items-center justify-between p-4 rounded-2xl field">
                   <div className="flex items-center gap-3">
-                    <i className="fa-solid fa-ghost w-5 text-[#8FBC94] text-lg" />
+                    <i className="fa-solid fa-ghost w-5 text-[var(--accent)] text-lg" />
                     <div>
                       <p className="text-sm font-semibold text-[var(--text-main)]">
                         Enable Ghost Mode
                       </p>
-                      <p className="text-xs text-sub">
+                      <p className="text-xs text-sub font-body">
                         Suppresses presence broadcast. You will never appear online to others.
                       </p>
                     </div>

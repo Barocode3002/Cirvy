@@ -27,21 +27,14 @@ export default function NavBar() {
       {/* ============ STICKY HEADER ============ */}
       <header className="rounded-2xl sticky top-0 z-30 glass px-4 py-3 flex items-center justify-between w-full transition-all duration-300 md:hidden border-b border-[var(--card-border)]">
         <NavLink to="/feed" className="flex items-center gap-2.5 group">
-          <CirvyLogo variant="icon" size={30} showGlow />
-          <div className="leading-tight">
-            <div className="flex items-center gap-1.5">
-              <p className="font-display font-extrabold text-base text-[var(--text-main)] tracking-tight ">
-                {t('brand')}
-              </p>
-            </div>
-          </div>
+          <CirvyLogo variant="full" size={24} />
         </NavLink>
 
         <div className="flex items-center gap-2">
           {/* Language Toggle */}
           <button
             onClick={toggleLang}
-            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-display font-bold scale-tap transition-all hover:border-[#4A7A8C] cursor-pointer"
+            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-display font-bold scale-tap transition-all hover:border-[var(--accent)] cursor-pointer"
             title="Toggle Language"
           >
             <span>{lang === 'ar' ? 'EN' : 'AR'}</span>
@@ -49,7 +42,7 @@ export default function NavBar() {
           {/* Settings Trigger */}
           <NavLink
             to="/settings"
-            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-semibold scale-tap transition-all hover:border-[#4A7A8C] cursor-pointer"
+            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-semibold scale-tap transition-all hover:border-[var(--accent)] cursor-pointer"
             title="Settings"
             aria-label="Settings"
           >
@@ -61,7 +54,7 @@ export default function NavBar() {
       {/* ============ BOTTOM NAV ============ */}
       <nav
         id="bottomNav"
-        className="rounded-2xl fixed bottom-2 left-2 right-2 glass border-t border-[var(--card-border)] px-2 pt-2 z-30 shadow-lg md:hidden"
+        className="rounded-2xl fixed bottom-2 left-2 right-2 glass border border-[var(--card-border)] px-2 pt-2 z-30 shadow-lg md:hidden"
         style={{
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)',
         }}
@@ -79,7 +72,7 @@ export default function NavBar() {
               }
             >
               <i className={`${icon} nav-ico text-[17px]`} />
-              <span className="nav-dot w-1 h-1 rounded-full bg-[#8FBC94]" />
+              <span className="nav-dot w-1 h-1 rounded-full bg-[var(--accent)]" />
               <span className="text-[10px] font-medium leading-none">{label}</span>
             </NavLink>
           ))}

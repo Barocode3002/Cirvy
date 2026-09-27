@@ -78,7 +78,7 @@ export default function CreatePostPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
-              className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap hover:border-[#4A7A8C] cursor-pointer"
+              className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap hover:border-[var(--accent)] cursor-pointer"
               aria-label="Go back"
             >
               <ArrowLeft size={16} className="text-sub" />

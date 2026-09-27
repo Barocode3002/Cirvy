@@ -9,70 +9,71 @@
 /* ------------------------------------------------------------------ */
 
 :root {
-  --color-primary-blue: #4A7A8C;   /* "Quiet Slate" */
-  --color-comfort-green: #8FBC94;  /* "Sage Connection" */
-  --color-base-canvas: #F5F7F8;    /* "Digital Air" */
-  --color-deep-ink: #2E3B42;       /* "Deep Ink" */
-  --color-subtle-accent: #D1E0E3;  /* "Morning Mist" */
+  --color-primary-blue: #00AFA0;   /* Primary Teal */
+  --color-comfort-green: #38C4E8;  /* Secondary Sky Blue */
+  --color-base-canvas: #F0FAF9;    /* Canvas */
+  --color-deep-ink: #0A0A0A;       /* Text main */
+  --color-subtle-accent: #E0F7F4;  /* Border / subtle accent */
+  --color-status-accent: #F9CB42;  /* Accent highlight */
 
-  --bg: #F5F7F8;
+  --bg: #F0FAF9;
   --bg-alt: #FFFFFF;
-  --card-bg: rgba(255, 255, 255, 0.92);
-  --card-border: #D1E0E3;
-  --text-main: #2E3B42;
-  --text-sub: #5B6B73;
-  --accent: #4A7A8C;
-  --accent-soft: rgba(74, 122, 140, 0.12);
-  --accent-green: #8FBC94;
-  --accent-green-soft: rgba(143, 188, 148, 0.16);
-  --subtle-accent: #D1E0E3;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-border: #E0F7F4;
+  --text-main: #0A0A0A;
+  --text-sub: #5B6B6A;
+  --accent: #00AFA0;
+  --accent-soft: rgba(0, 175, 160, 0.12);
+  --accent-green: #38C4E8;
+  --accent-green-soft: rgba(56, 196, 232, 0.16);
+  --subtle-accent: #E0F7F4;
 
   /* shadcn base compatibility */
-  --background: #F5F7F8;
-  --foreground: #2E3B42;
+  --background: #F0FAF9;
+  --foreground: #0A0A0A;
   --card: #FFFFFF;
-  --card-foreground: #2E3B42;
+  --card-foreground: #0A0A0A;
   --popover: #FFFFFF;
-  --popover-foreground: #2E3B42;
-  --primary: #4A7A8C;
-  --primary-foreground: #F5F7F8;
-  --secondary: #D1E0E3;
-  --secondary-foreground: #2E3B42;
-  --muted: #D1E0E3;
-  --muted-foreground: #5B6B73;
-  --input: #D1E0E3;
-  --ring: #4A7A8C;
+  --popover-foreground: #0A0A0A;
+  --primary: #00AFA0;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E0F7F4;
+  --secondary-foreground: #0A0A0A;
+  --muted: #E0F7F4;
+  --muted-foreground: #5B6B6A;
+  --input: #E0F7F4;
+  --ring: #00AFA0;
   --radius: 1rem;
 
   color-scheme: light dark;
 }
 
 html.dark {
-  --bg: #0B0C0D;
-  --bg-alt: #131415;
-  --card-bg: rgba(19, 20, 21, 0.92);
-  --card-border: #232427;
-  --text-main: #F2F2F3;
-  --text-sub: #9A9CA1;
-  --accent: #4FA98C;
-  --accent-soft: rgba(79, 169, 140, 0.14);
-  --accent-green: #8FBC94;
-  --accent-green-soft: rgba(143, 188, 148, 0.16);
-  --subtle-accent: #1C1D1F;
-  --background: #0B0C0D;
-  --foreground: #F2F2F3;
-  --card: #131415;
-  --card-foreground: #F2F2F3;
-  --popover: #131415;
-  --popover-foreground: #F2F2F3;
-  --primary: #4FA98C;
-  --primary-foreground: #0B0C0D;
-  --secondary: #1C1D1F;
-  --secondary-foreground: #F2F2F3;
-  --muted: #1C1D1F;
-  --muted-foreground: #9A9CA1;
-  --input: #1C1D1F;
-  --ring: #4FA98C;
+  --bg: #070D0C;
+  --bg-alt: #0D1A19;
+  --card-bg: rgba(13, 26, 25, 0.94);
+  --card-border: #142422;
+  --text-main: #FFFFFF;
+  --text-sub: #8FA6A3;
+  --accent: #3FCDC0;
+  --accent-soft: rgba(63, 205, 192, 0.14);
+  --accent-green: #38C4E8;
+  --accent-green-soft: rgba(56, 196, 232, 0.16);
+  --subtle-accent: #142422;
+  --background: #070D0C;
+  --foreground: #FFFFFF;
+  --card: #0D1A19;
+  --card-foreground: #FFFFFF;
+  --popover: #0D1A19;
+  --popover-foreground: #FFFFFF;
+  --primary: #3FCDC0;
+  --primary-foreground: #070D0C;
+  --secondary: #142422;
+  --secondary-foreground: #FFFFFF;
+  --muted: #142422;
+  --muted-foreground: #8FA6A3;
+  --input: #142422;
+  --ring: #3FCDC0;
 }
 
 html[dir="rtl"] body {
@@ -90,6 +91,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Syne', 'Cairo', sans-serif;
+}
+
 #root {
   min-height: 100svh;
 }
@@ -99,13 +104,14 @@ body {
   --font-body: 'DM Sans', 'Cairo', sans-serif;
   --font-serif: 'DM Serif Display', serif;
 
-  --color-primary-blue: #4A7A8C;
-  --color-comfort-green: #8FBC94;
-  --color-base-canvas: #F5F7F8;
-  --color-deep-ink: #2E3B42;
-  --color-subtle-accent: #D1E0E3;
+  --color-primary-blue: #00AFA0;
+  --color-comfort-green: #38C4E8;
+  --color-base-canvas: #F0FAF9;
+  --color-deep-ink: #0A0A0A;
+  --color-subtle-accent: #E0F7F4;
+  --color-status-accent: #F9CB42;
 
-  --shadow-glass: 0 12px 36px rgba(18, 24, 28, 0.06);
+  --shadow-glass: 0 12px 36px rgba(0, 0, 0, 0.04);
 }
 
 /* ------------------------------------------------------------------ */

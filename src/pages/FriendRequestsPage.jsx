@@ -70,7 +70,7 @@ export default function FriendRequests() {
   return (
     <AppShell>
       <main className="flex-1 overflow-y-auto px-4 py-6 view max-w-2xl mx-auto">
-        <h2 className="font-display font-bold text-xl mb-4 text-[var(--text-main)]">
+        <h2 className="font-display font-extrabold text-2xl mb-4 text-[var(--text-main)] tracking-tight">
           {t('friendsTitle')}
         </h2>
 
@@ -80,7 +80,7 @@ export default function FriendRequests() {
         >
           <button
             onClick={() => setTab('friends')}
-            className={`tab-underline pb-3 text-sm font-semibold scale-tap cursor-pointer transition-colors ${tab === 'friends' ? 'active text-[var(--text-main)]' : 'text-sub'
+            className={`tab-underline pb-3 text-sm font-display font-bold scale-tap cursor-pointer transition-colors ${tab === 'friends' ? 'active text-[var(--text-main)]' : 'text-sub'
               }`}
           >
             <span>{t('friendsTab')}</span>
@@ -90,12 +90,12 @@ export default function FriendRequests() {
           </button>
           <button
             onClick={() => setTab('requests')}
-            className={`tab-underline pb-3 text-sm font-semibold scale-tap cursor-pointer transition-colors ${tab === 'requests' ? 'active text-[var(--text-main)]' : 'text-sub'
+            className={`tab-underline pb-3 text-sm font-display font-bold scale-tap cursor-pointer transition-colors ${tab === 'requests' ? 'active text-[var(--text-main)]' : 'text-sub'
               }`}
           >
             <span>{t('requestsTab')}</span>
             {requests.length > 0 && (
-              <span className="ms-1.5 px-2 py-0.5 rounded-full accent-bg text-[#F5F7F8] dark:text-[#10181C] text-[10px] font-display font-bold">
+              <span className="ms-1.5 px-2 py-0.5 rounded-full accent-bg text-white dark:text-[#070D0C] text-[10px] font-display font-bold">
                 {requests.length}
               </span>
             )}
@@ -125,13 +125,13 @@ export default function FriendRequests() {
                 {friends.length === 0 ? (
                   <div className="glass rounded-3xl p-10 text-center border border-[var(--card-border)]">
                     <Users size={28} className="text-sub mx-auto mb-2 opacity-60" />
-                    <p className="font-bold text-sm text-[var(--text-main)]">No connections yet</p>
-                    <p className="text-xs text-sub mt-1">
+                    <p className="font-display font-bold text-sm text-[var(--text-main)]">No connections yet</p>
+                    <p className="text-xs text-sub mt-1 font-body">
                       Search for people you know to build your private circle.
                     </p>
                     <Link
                       to="/search"
-                      className="inline-flex items-center gap-1.5 accent-bg text-[#F5F7F8] dark:text-[#10181C] text-xs font-bold px-4 py-2 rounded-full mt-4 scale-tap"
+                      className="inline-flex items-center gap-1.5 accent-bg text-white dark:text-[#070D0C] text-xs font-bold font-display px-4 py-2 rounded-full mt-4 scale-tap"
                     >
                       <UserPlus size={13} />
                       <span>Find friends</span>
@@ -152,7 +152,7 @@ export default function FriendRequests() {
                               f.avatar_url ||
                               `https://ui-avatars.com/api/?name=${encodeURIComponent(
                                 f.display_name || 'U'
-                              )}&background=4A7A8C&color=fff`
+                              )}&background=00AFA0&color=fff`
                             }
                             alt=""
                             className="w-11 h-11 rounded-full object-cover ring-2 ring-[var(--card-border)]"
@@ -160,7 +160,7 @@ export default function FriendRequests() {
                           {/* Real online/offline presence indicator */}
                           <span
                             className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full ring-2 ring-[var(--bg)] ${online
-                                ? 'bg-[#8FBC94] shadow-[0_0_6px_rgba(143,188,148,0.8)]'
+                                ? 'bg-[var(--accent)] shadow-[0_0_6px_rgba(0,175,160,0.8)]'
                                 : 'bg-[#8FA6B0] opacity-50'
                               }`}
                             title={online ? 'Online' : 'Offline'}
@@ -173,9 +173,9 @@ export default function FriendRequests() {
                           >
                             {f.display_name}
                           </Link>
-                          <p className="text-xs text-sub truncate">
-                            <span className="font-display">@{f.username}</span> · {online ? (
-                              <span className="text-[#8FBC94] font-medium">Online</span>
+                          <p className="text-xs text-sub truncate font-display">
+                            <span>@{f.username}</span> · {online ? (
+                              <span className="text-[var(--accent)] font-medium">Online</span>
                             ) : (
                               'Offline'
                             )}
@@ -183,7 +183,7 @@ export default function FriendRequests() {
                         </div>
                         <Link
                           to={friendPath}
-                          className="field h-8 px-3 rounded-full flex items-center justify-center text-xs font-semibold text-sub hover:text-[var(--text-main)] scale-tap transition"
+                          className="field h-8 px-3 rounded-full flex items-center justify-center text-xs font-semibold text-sub hover:text-[var(--text-main)] hover:border-[var(--accent)] scale-tap transition"
                         >
                           View
                         </Link>
@@ -200,8 +200,8 @@ export default function FriendRequests() {
                 {requests.length === 0 ? (
                   <div className="glass rounded-3xl p-10 text-center border border-[var(--card-border)]">
                     <UserCheck size={28} className="text-sub mx-auto mb-2 opacity-60" />
-                    <p className="font-bold text-sm text-[var(--text-main)]">All caught up</p>
-                    <p className="text-xs text-sub mt-1">No pending friend requests right now.</p>
+                    <p className="font-display font-bold text-sm text-[var(--text-main)]">All caught up</p>
+                    <p className="text-xs text-sub mt-1 font-body">No pending friend requests right now.</p>
                   </div>
                 ) : (
                   requests.map((r) => {
@@ -217,7 +217,7 @@ export default function FriendRequests() {
                               r.requester.avatar_url ||
                               `https://ui-avatars.com/api/?name=${encodeURIComponent(
                                 r.requester.display_name || 'U'
-                              )}&background=4A7A8C&color=fff`
+                              )}&background=00AFA0&color=fff`
                             }
                             alt=""
                             className="w-11 h-11 rounded-full object-cover ring-2 ring-[var(--card-border)]"
@@ -238,7 +238,7 @@ export default function FriendRequests() {
                           <button
                             onClick={() => accept(r.id)}
                             disabled={actioningId === r.id}
-                            className="accent-bg text-[#F5F7F8] dark:text-[#10181C] text-xs font-bold px-3.5 py-1.5 rounded-full scale-tap transition disabled:opacity-50 cursor-pointer"
+                            className="accent-bg text-white dark:text-[#070D0C] text-xs font-bold font-display px-3.5 py-1.5 rounded-full scale-tap transition disabled:opacity-50 cursor-pointer"
                           >
                             {t('accept')}
                           </button>

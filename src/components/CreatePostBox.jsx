@@ -167,7 +167,7 @@ export default function CreatePostBox({ onCreate, currentUser }) {
     profile?.avatar_url ||
     `https://ui-avatars.com/api/?name=${encodeURIComponent(
       profile?.display_name || profile?.username || 'You'
-    )}&background=4A7A8C&color=F5F7F8`
+    )}&background=00AFA0&color=fff`
 
   return (
     <form
@@ -185,7 +185,7 @@ export default function CreatePostBox({ onCreate, currentUser }) {
           onChange={(event) => setContent(event.target.value)}
           placeholder="Share something with your private circle..."
           rows={3}
-          className="min-h-24 flex-1 resize-none bg-transparent pt-1 text-sm leading-6 text-[var(--text-main)] outline-none placeholder:text-sub"
+          className="min-h-24 flex-1 resize-none bg-transparent pt-1 text-sm leading-6 text-[var(--text-main)] outline-none placeholder:text-sub/60"
         />
       </div>
 
@@ -219,11 +219,11 @@ export default function CreatePostBox({ onCreate, currentUser }) {
 
       {/* Interactive Poll Creator Card */}
       {showPoll && (
-        <div className="mt-4 rounded-2xl field p-4 border border-[#4A7A8C]/30 bg-[#4A7A8C]/5 transition-all space-y-3">
+        <div className="mt-4 rounded-2xl field p-4 border border-[var(--accent)]/30 bg-[var(--accent)]/5 transition-all space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <BarChart2 size={16} className="text-[#8FBC94]" />
-              <p className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider">
+              <BarChart2 size={16} className="text-[var(--accent)]" />
+              <p className="text-xs font-bold font-display text-[var(--text-main)] uppercase tracking-wider">
                 Circle Poll
               </p>
             </div>
@@ -246,7 +246,7 @@ export default function CreatePostBox({ onCreate, currentUser }) {
             placeholder="Ask a question..."
             value={pollQuestion}
             onChange={(e) => setPollQuestion(e.target.value)}
-            className="w-full rounded-xl field px-3.5 py-2 text-xs text-[var(--text-main)] outline-none focus:border-[#4A7A8C]"
+            className="w-full rounded-xl field px-3.5 py-2 text-xs text-[var(--text-main)] outline-none focus:border-[var(--accent)]"
           />
 
           <div className="space-y-2">
@@ -260,7 +260,7 @@ export default function CreatePostBox({ onCreate, currentUser }) {
                   placeholder={`Option ${idx + 1}`}
                   value={opt}
                   onChange={(e) => handleOptionChange(idx, e.target.value)}
-                  className="flex-1 rounded-xl field px-3.5 py-2 text-xs text-[var(--text-main)] outline-none focus:border-[#4A7A8C]"
+                  className="flex-1 rounded-xl field px-3.5 py-2 text-xs text-[var(--text-main)] outline-none focus:border-[var(--accent)]"
                 />
                 {pollOptions.length > 2 && (
                   <button
@@ -280,7 +280,7 @@ export default function CreatePostBox({ onCreate, currentUser }) {
             <button
               type="button"
               onClick={handleAddOption}
-              className="flex items-center gap-1.5 text-xs font-semibold text-[#4A7A8C] dark:text-[#CFE3E9] hover:underline pt-1 cursor-pointer"
+              className="flex items-center gap-1.5 text-xs font-semibold text-[var(--accent)] hover:underline pt-1 cursor-pointer"
             >
               <Plus size={14} />
               <span>Add option ({pollOptions.length}/4)</span>
@@ -303,7 +303,7 @@ export default function CreatePostBox({ onCreate, currentUser }) {
       <div className="mt-5 flex flex-col gap-3 border-t border-[var(--card-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           {/* Image Upload */}
-          <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-full field px-3.5 text-xs font-semibold text-[var(--text-main)] transition hover:border-[#4A7A8C] scale-tap">
+          <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-full field px-3.5 text-xs font-semibold text-[var(--text-main)] transition hover:border-[var(--accent)] scale-tap">
             <Image size={15} className="accent-text" />
             <span>Image</span>
             <input
@@ -315,8 +315,8 @@ export default function CreatePostBox({ onCreate, currentUser }) {
           </label>
 
           {/* Video Upload */}
-          <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-full field px-3.5 text-xs font-semibold text-[var(--text-main)] transition hover:border-[#4A7A8C] scale-tap">
-            <Video size={15} className="text-[#8FBC94]" />
+          <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-full field px-3.5 text-xs font-semibold text-[var(--text-main)] transition hover:border-[var(--accent)] scale-tap">
+            <Video size={15} className="text-[var(--accent-green)]" />
             <span>Video</span>
             <input
               type="file"
@@ -331,8 +331,8 @@ export default function CreatePostBox({ onCreate, currentUser }) {
             type="button"
             onClick={() => setShowPoll(!showPoll)}
             className={`inline-flex h-9 items-center gap-2 rounded-full field px-3.5 text-xs font-semibold transition scale-tap cursor-pointer ${showPoll
-                ? 'border-[#4A7A8C] text-[var(--text-main)] bg-[#4A7A8C]/10'
-                : 'text-sub hover:text-[var(--text-main)] hover:border-[#4A7A8C]'
+                ? 'border-[var(--accent)] text-[var(--text-main)] bg-[var(--accent)]/10'
+                : 'text-sub hover:text-[var(--text-main)] hover:border-[var(--accent)]'
               }`}
           >
             <BarChart2 size={15} />
@@ -348,7 +348,7 @@ export default function CreatePostBox({ onCreate, currentUser }) {
         <button
           type="submit"
           disabled={(!content.trim() && !mediaFile && !showPoll) || posting}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-full accent-bg px-6 text-xs font-bold text-[#F5F7F8] dark:text-[#10181C] transition scale-tap disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-sm"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-full accent-bg px-6 text-xs font-bold font-display text-white dark:text-[#070D0C] transition scale-tap disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-sm"
         >
           <Send size={14} />
           <span>{posting ? 'Posting...' : 'Post to Circle'}</span>

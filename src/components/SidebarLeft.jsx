@@ -54,17 +54,7 @@ export default function SidebarLeft() {
       {/* Brand */}
       <div className="mb-8 px-2">
         <NavLink to="/feed" className="flex items-center gap-3 group">
-          <CirvyLogo variant="icon" size={32} showGlow />
-          <div className="leading-tight">
-            <div className="flex items-center gap-1.5">
-              <p className="font-display font-extrabold text-[17px] text-[#2E3B42] dark:text-[#F5F7F8] tracking-tight group-hover:text-[#4A7A8C] transition-colors">
-                {t('brand') || 'Cirvy'}
-              </p>
-            </div>
-            <p className="text-[10px] font-display text-[#677A85] tracking-wider uppercase">
-              {t('shieldLabel') || 'Private'}
-            </p>
-          </div>
+          <CirvyLogo variant="full" size={26} />
         </NavLink>
       </div>
 
@@ -76,8 +66,8 @@ export default function SidebarLeft() {
             to={to}
             className={({ isActive }) =>
               `flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-medium scale-tap ${isActive
-                ? 'bg-[#F5F7F8] text-[#4A7A8C] shadow-sm'
-                : 'text-[#677A85] hover:bg-[#F5F7F8] hover:text-[#2E3B42]'
+                ? 'accent-bg text-white dark:text-[#070D0C] shadow-sm font-bold'
+                : 'text-sub hover:bg-[var(--card-border)]/40 hover:text-[var(--text-main)]'
               }`
             }
           >
@@ -90,16 +80,16 @@ export default function SidebarLeft() {
       {/* My Friends Module */}
       <div className="px-2">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-display font-bold text-sm text-[#2E3B42] dark:text-[#F5F7F8]">My Friends</h3>
+          <h3 className="font-display font-bold text-sm text-[var(--text-main)]">My Friends</h3>
           {friends.length > 0 && (
-            <span className="bg-[#4A7A8C] text-[#F5F7F8] text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span className="accent-bg text-white dark:text-[#070D0C] text-[10px] font-bold px-2 py-0.5 rounded-full font-display">
               {friends.length}
             </span>
           )}
         </div>
 
         {friends.length === 0 ? (
-          <p className="text-xs text-[#677A85]">No friends yet.</p>
+          <p className="text-xs text-sub">No friends yet.</p>
         ) : (
           <div className="space-y-3">
             {friends.map(friend => {
@@ -107,12 +97,12 @@ export default function SidebarLeft() {
               return (
                 <NavLink to={friendPath} key={friend.id} className="flex items-center gap-3 group">
                   <img
-                    src={friend.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.display_name || 'U')}&background=4A7A8C&color=fff`}
+                    src={friend.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.display_name || 'U')}&background=00AFA0&color=fff`}
                     alt=""
                     className="w-8 h-8 rounded-full object-cover"
                   />
                   <div className="flex-1 truncate">
-                    <p className="text-xs font-semibold text-[#2E3B42] dark:text-[#F5F7F8] group-hover:text-[#4A7A8C] truncate">
+                    <p className="text-xs font-semibold text-[var(--text-main)] group-hover:text-[var(--accent)] truncate">
                       {friend.display_name || 'User'}
                     </p>
                   </div>

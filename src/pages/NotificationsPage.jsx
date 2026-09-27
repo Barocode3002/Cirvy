@@ -131,15 +131,15 @@ export default function NotificationsPage() {
   function getIcon(type) {
     switch (type) {
       case 'like':
-        return <Heart size={14} className="text-[#4A7A8C] fill-[#4A7A8C] dark:text-[#CFE3E9] dark:fill-[#CFE3E9]" />
+        return <Heart size={14} className="text-[var(--accent)] fill-[var(--accent)]" />
       case 'comment':
-        return <MessageSquare size={14} className="text-[#4A7A8C]" />
+        return <MessageSquare size={14} className="text-[var(--accent)]" />
       case 'friend_request':
-        return <UserPlus size={14} className="text-[#8FBC94]" />
+        return <UserPlus size={14} className="text-[var(--accent)]" />
       case 'friend_accept':
-        return <UserCheck size={14} className="text-[#8FBC94]" />
+        return <UserCheck size={14} className="text-[var(--accent-green)]" />
       case 'poll_vote':
-        return <Vote size={14} className="text-[#8FBC94]" />
+        return <Vote size={14} className="text-[var(--accent)]" />
       default:
         return <Bell size={14} className="text-sub" />
     }
@@ -160,7 +160,7 @@ export default function NotificationsPage() {
           {notifications.some((n) => !n.is_read) && (
             <button
               onClick={handleMarkAllRead}
-              className="flex items-center gap-1.5 field px-3.5 py-1.5 rounded-full text-xs font-semibold text-sub hover:text-[var(--text-main)] scale-tap transition cursor-pointer"
+              className="flex items-center gap-1.5 field px-3.5 py-1.5 rounded-full text-xs font-semibold text-sub hover:text-[var(--text-main)] hover:border-[var(--accent)] scale-tap transition cursor-pointer"
             >
               <Check size={13} />
               <span>Mark all read</span>
@@ -185,11 +185,11 @@ export default function NotificationsPage() {
           </div>
         ) : notifications.length === 0 ? (
           <div className="glass rounded-3xl p-10 text-center border border-[var(--card-border)]">
-            <div className="w-12 h-12 rounded-2xl bg-[#8FBC94]/15 flex items-center justify-center mx-auto mb-3 text-[#8FBC94]">
+            <div className="w-12 h-12 rounded-2xl accent-soft-bg flex items-center justify-center mx-auto mb-3 text-[var(--accent)]">
               <Sparkles size={22} />
             </div>
-            <p className="font-bold text-[var(--text-main)] text-sm">You&apos;re all caught up!</p>
-            <p className="mt-1 text-xs text-sub max-w-xs mx-auto">
+            <p className="font-display font-bold text-[var(--text-main)] text-sm">You&apos;re all caught up!</p>
+            <p className="mt-1 text-xs text-sub max-w-xs mx-auto font-body">
               No new notifications right now. Activity from your trusted circle will appear here.
             </p>
           </div>
@@ -202,13 +202,13 @@ export default function NotificationsPage() {
                 actor.avatar_url ||
                 `https://ui-avatars.com/api/?name=${encodeURIComponent(
                   actor.display_name || 'U'
-                )}&background=4A7A8C&color=fff`
+                )}&background=00AFA0&color=fff`
 
               return (
                 <div
                   key={item.id}
                   className={`glass rounded-2xl p-4 flex items-center gap-3 transition border border-[var(--card-border)] ${
-                    !item.is_read ? 'ring-1 ring-[#4A7A8C]/30 bg-[#4A7A8C]/5' : ''
+                    !item.is_read ? 'ring-1 ring-[var(--accent)]/30 bg-[var(--accent)]/5' : ''
                   }`}
                 >
                   <Link to={actorPath} className="relative shrink-0">
@@ -232,7 +232,7 @@ export default function NotificationsPage() {
                       </Link>
                       <span>{item.content}</span>
                     </p>
-                    <p className="text-[11px] text-sub mt-0.5">
+                    <p className="text-[11px] text-sub mt-0.5 font-display">
                       {formatTimeAgo(item.created_at)}
                     </p>
                   </div>
@@ -242,7 +242,7 @@ export default function NotificationsPage() {
                       <button
                         onClick={() => handleAcceptFriend(item.friendship_id, item.id)}
                         disabled={actioningId === item.id}
-                        className="accent-bg text-[#F5F7F8] dark:text-[#10181C] text-xs font-bold px-3 py-1.5 rounded-full scale-tap transition cursor-pointer disabled:opacity-50"
+                        className="accent-bg text-white dark:text-[#070D0C] text-xs font-bold font-display px-3 py-1.5 rounded-full scale-tap transition cursor-pointer disabled:opacity-50"
                       >
                         Accept
                       </button>

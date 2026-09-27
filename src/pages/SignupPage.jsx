@@ -144,27 +144,24 @@ export default function SignupPage() {
   // const isAppleDevice = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent)
 
   return (
-    <div className="min-h-screen flex flex-col max-w-md md:max-w-xl mx-auto relative px-4 py-4 selection:bg-[#8FBC94]/30">
+    <div className="min-h-screen flex flex-col justify-between max-w-md md:max-w-xl mx-auto relative px-4 py-6">
       {/* Header controls */}
       <header className="flex items-center justify-between py-2">
         <div className="flex items-center gap-2">
-          <CirvyLogo variant="icon" size={30} showGlow />
-          <span className="text-l font-display font-extrabold tracking-wider text-[var(--text-main)] uppercase">
-            {t('brand')}
-          </span>
+          <CirvyLogo variant="icon" size={28} />
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={toggleLang}
-            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-display font-bold scale-tap hover:border-[#4A7A8C] cursor-pointer"
+            className="w-9 h-9 rounded-full field flex items-center justify-center text-xs font-display font-bold scale-tap hover:border-[var(--accent)] cursor-pointer"
             title="Toggle Language"
           >
             <span>{lang === 'ar' ? 'EN' : 'AR'}</span>
           </button>
           <button
             onClick={toggleTheme}
-            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-semibold scale-tap hover:border-[#4A7A8C] cursor-pointer"
+            className="w-9 h-9 rounded-full field flex items-center justify-center text-xs font-semibold scale-tap hover:border-[var(--accent)] cursor-pointer"
             title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
             aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
@@ -174,29 +171,27 @@ export default function SignupPage() {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col justify-center py-4 view">
+      <main className="flex-1 flex flex-col justify-center py-6 view">
         {/* Brand Hero */}
         <div className="text-center mb-6 flex flex-col items-center">
-          <CirvyLogo variant="icon" size={44} className="mb-3" />
-          {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-display font-semibold tracking-wide bg-[#8FBC94]/15 text-[#8FBC94] border border-[#8FBC94]/30 mb-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8FBC94]" />
-            <span>{t('shieldLabel')}</span>
-          </div> */}
-          <h1 className="font-display font-bold text-xl md:text-2xl text-[var(--text-main)] max-w-sm leading-tight">
+          <div className="mb-3">
+            <CirvyLogo variant="full" size={38} />
+          </div>
+          <h1 className="font-display font-bold text-2xl md:text-3xl text-[var(--text-main)] max-w-sm leading-tight tracking-tight">
             {isOtpStep ? (t('verifyEmail') || 'Verify your email') : t('SignupAuthHeadline')}
           </h1>
-          <p className="text-sub text-xs md:text-sm mt-1 max-w-xs">
+          <p className="font-body text-sub text-xs md:text-sm mt-1.5 max-w-xs">
             {isOtpStep
               ? `${t('enterOtp') || 'Enter the 8-character code sent to'} ${form.email}`
               : t('authSub')}
           </p>
         </div>
 
-        <div className="glass rounded-3xl p-6 shadow-glass border border-[var(--card-border)]">
+        <div className="glass rounded-3xl p-6 sm:p-8 shadow-glass border border-[var(--card-border)]">
           {isOtpStep ? (
             /* ============ OTP Verification Screen ============ */
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-[var(--card-border)]">
+              <div className="flex items-center justify-between pb-3 border-b border-[var(--card-border)]">
                 <button
                   type="button"
                   onClick={() => {
@@ -204,12 +199,12 @@ export default function SignupPage() {
                     setError(null)
                     setOtpCode('')
                   }}
-                  className="inline-flex items-center gap-1.5 text-xs text-sub hover:text-[var(--text-main)] font-semibold scale-tap"
+                  className="inline-flex items-center gap-1.5 text-xs text-sub hover:text-[var(--accent)] font-semibold scale-tap transition-colors"
                 >
                   <ArrowLeft size={14} />
                   <span>{t('backToSignup') || 'Change email'}</span>
                 </button>
-                <span className="text-[11px] font-display text-sub">{form.email}</span>
+                <span className="text-xs font-display text-sub">{form.email}</span>
               </div>
 
               {error && (
@@ -221,7 +216,7 @@ export default function SignupPage() {
 
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-main)] mb-2 text-center">
+                  <label className="block text-xs font-display font-semibold text-[var(--text-main)] mb-2 text-center">
                     {lang === 'ar' ? 'رمز التحقق (8 خانات)' : '8-Character Verification Code'}
                   </label>
                   <div className="relative">
@@ -235,7 +230,7 @@ export default function SignupPage() {
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.trim())}
                       placeholder="••••••••"
-                      className="field w-full rounded-2xl py-3.5 text-center text-xl md:text-2xl font-display tracking-[0.25em] md:tracking-[0.35em] font-bold outline-none focus:border-[#4A7A8C]"
+                      className="field w-full rounded-2xl py-3.5 text-center text-xl md:text-2xl font-display tracking-[0.25em] md:tracking-[0.35em] font-bold outline-none focus:border-[var(--accent)]"
                     />
                   </div>
                 </div>
@@ -243,7 +238,7 @@ export default function SignupPage() {
                 <button
                   type="submit"
                   disabled={otpCode.length < 6 || verifying}
-                  className="w-full accent-bg text-[#F5F7F8] dark:text-[#10181C] rounded-full py-3.5 font-bold text-xs md:text-sm scale-tap transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full accent-bg text-white dark:text-[#070D0C] rounded-full py-3.5 font-display font-bold text-xs md:text-sm tracking-wide scale-tap transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {verifying && <i className="fa-solid fa-circle-notch fa-spin text-sm" />}
                   <span>{t('verifyBtn') || 'Verify & Continue'}</span>
@@ -256,7 +251,7 @@ export default function SignupPage() {
                   type="button"
                   onClick={handleResendCode}
                   disabled={countdown > 0 || resending}
-                  className="inline-flex items-center gap-1 font-bold text-sub hover:text-[var(--text-main)] disabled:opacity-50 scale-tap cursor-pointer"
+                  className="inline-flex items-center gap-1 font-bold text-sub hover:text-[var(--accent)] disabled:opacity-50 scale-tap cursor-pointer transition-colors"
                 >
                   <RefreshCw size={12} className={resending ? 'animate-spin' : ''} />
                   <span>
@@ -270,17 +265,17 @@ export default function SignupPage() {
           ) : (
             /* ============ Signup Form ============ */
             <>
-              {/* Tab Switcher */}
-              <div className="flex mb-6 rounded-2xl p-1 field">
+              {/* Segmented Tab Switcher */}
+              <div className="flex mb-6 rounded-2xl p-1 bg-[var(--card-border)]/50">
                 <button
                   onClick={() => navigate('/login')}
-                  className="flex-1 py-2 rounded-xl text-xs md:text-sm font-medium transition-all text-sub hover:text-[var(--text-main)] scale-tap"
+                  className="flex-1 py-2.5 rounded-xl text-xs md:text-sm font-display font-medium transition-all text-sub hover:text-[var(--text-main)] scale-tap"
                 >
                   {t('signIn')}
                 </button>
                 <button
                   onClick={() => { }}
-                  className="flex-1 py-2 rounded-xl text-xs md:text-sm font-bold transition-all accent-bg text-[#F5F7F8] dark:text-[#10181C]"
+                  className="flex-1 py-2.5 rounded-xl text-xs md:text-sm font-display font-bold transition-all accent-bg text-white dark:text-[#070D0C] shadow-sm"
                 >
                   {t('signUp')}
                 </button>
@@ -295,7 +290,7 @@ export default function SignupPage() {
 
               <form id="signupForm" className="space-y-3.5" onSubmit={handleSubmit}>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-main)] mb-1">
+                  <label className="block text-xs font-display font-semibold text-[var(--text-main)] mb-1">
                     {t('fullName')}
                   </label>
                   <div className="relative">
@@ -307,7 +302,7 @@ export default function SignupPage() {
                       required
                       value={form.displayName}
                       onChange={handleChange}
-                      className="field w-full rounded-2xl pl-9 pr-4 py-2.5 text-sm rtl:pl-4 rtl:pr-9 outline-none focus:border-[#4A7A8C]"
+                      className="field w-full rounded-2xl pl-10 pr-4 py-2.5 text-sm rtl:pl-4 rtl:pr-10 outline-none focus:border-[var(--accent)]"
                       placeholder="your name"
                       autoComplete="name"
                     />
@@ -315,7 +310,7 @@ export default function SignupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-main)] mb-1">
+                  <label className="block text-xs font-display font-semibold text-[var(--text-main)] mb-1">
                     {t('username')}
                   </label>
                   <div className="relative">
@@ -329,7 +324,7 @@ export default function SignupPage() {
                       required
                       value={form.username}
                       onChange={handleChange}
-                      className="field w-full rounded-2xl pl-9 pr-4 py-2.5 text-sm rtl:pl-4 rtl:pr-9 font-display outline-none focus:border-[#4A7A8C]"
+                      className="field w-full rounded-2xl pl-10 pr-4 py-2.5 text-sm rtl:pl-4 rtl:pr-10 font-display outline-none focus:border-[var(--accent)]"
                       placeholder="username"
                       autoComplete="username"
                     />
@@ -337,7 +332,7 @@ export default function SignupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-main)] mb-1">
+                  <label className="block text-xs font-display font-semibold text-[var(--text-main)] mb-1">
                     {t('email')}
                   </label>
                   <div className="relative">
@@ -349,7 +344,7 @@ export default function SignupPage() {
                       required
                       value={form.email}
                       onChange={handleChange}
-                      className="field w-full rounded-2xl pl-9 pr-4 py-2.5 text-sm rtl:pl-4 rtl:pr-9 outline-none focus:border-[#4A7A8C]"
+                      className="field w-full rounded-2xl pl-10 pr-4 py-2.5 text-sm rtl:pl-4 rtl:pr-10 outline-none focus:border-[var(--accent)]"
                       placeholder="youremail@example.com"
                       autoComplete="email"
                     />
@@ -357,7 +352,7 @@ export default function SignupPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-main)] mb-1">
+                  <label className="block text-xs font-display font-semibold text-[var(--text-main)] mb-1">
                     {t('password')}
                   </label>
                   <div className="relative">
@@ -370,7 +365,7 @@ export default function SignupPage() {
                       minLength={6}
                       value={form.password}
                       onChange={handleChange}
-                      className="field w-full rounded-2xl pl-9 pr-4 py-2.5 text-sm rtl:pl-4 rtl:pr-9 outline-none focus:border-[#4A7A8C]"
+                      className="field w-full rounded-2xl pl-10 pr-4 py-2.5 text-sm rtl:pl-4 rtl:pr-10 outline-none focus:border-[var(--accent)]"
                       placeholder="••••••••"
                       autoComplete="new-password"
                     />
@@ -380,16 +375,16 @@ export default function SignupPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full accent-bg text-[#F5F7F8] dark:text-[#10181C] rounded-full py-3.5 font-bold text-xs md:text-sm scale-tap transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
+                  className="w-full accent-bg text-white dark:text-[#070D0C] rounded-full py-3.5 font-display font-bold text-xs md:text-sm tracking-wide scale-tap transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-2"
                 >
                   {loading && <i className="fa-solid fa-circle-notch fa-spin text-sm" />}
                   <span>{t('createAccount')}</span>
                 </button>
               </form>
 
-              <div className="flex items-center gap-3 my-5">
+              <div className="flex items-center gap-3 my-6">
                 <div className="h-px flex-1 bg-[var(--card-border)]" />
-                <span className="text-[10px] font-display text-sub uppercase tracking-wider">
+                <span className="text-[10px] font-display font-bold text-sub uppercase tracking-wider">
                   {t('orContinue')}
                 </span>
                 <div className="h-px flex-1 bg-[var(--card-border)]" />
@@ -399,27 +394,18 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => handleOAuth('google')}
-                  className="w-full field rounded-2xl py-4 flex items-center justify-center gap-3 text-base font-semibold scale-tap hover:border-[#4A7A8C] transition-all cursor-pointer"
+                  className="w-full field rounded-2xl py-3.5 px-4 flex items-center justify-center gap-3 text-sm font-semibold scale-tap hover:border-[var(--accent)] transition-all cursor-pointer"
                 >
                   <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5" /> Google
                 </button>
-                {/* {isAppleDevice && (
-                  <button
-                    type="button"
-                    onClick={() => handleOAuth('apple')}
-                    className="field rounded-2xl py-2.5 flex items-center justify-center gap-2 text-xs font-semibold scale-tap hover:border-[#4A7A8C] transition-all cursor-pointer"
-                  >
-                    <i className="fa-brands fa-apple text-[14px]" /> Apple
-                  </button>
-                )} */}
               </div>
             </>
           )}
         </div>
 
         {/* Footer */}
-        <p className="text-center text-[11px] text-sub mt-5 flex items-center justify-center gap-1.5 max-w-xs mx-auto leading-relaxed">
-          <i className="fa-solid fa-shield-halved text-[11px] text-[#8FBC94]" />
+        <p className="text-center text-[11px] text-sub mt-6 flex items-center justify-center gap-1.5 max-w-xs mx-auto leading-relaxed">
+          <i className="fa-solid fa-shield-halved text-[11px] text-[var(--accent)]" />
           <span>{t('authFooter')}</span>
         </p>
       </main>

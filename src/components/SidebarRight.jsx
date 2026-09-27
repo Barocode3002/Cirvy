@@ -43,15 +43,15 @@ export default function SidebarRight() {
 
   return (
     <aside className="hidden lg:flex flex-col w-72 h-screen sticky top-0 py-6 px-4 shrink-0 overflow-y-auto">
-      <div className="bg-[#F5F7F8] rounded-2xl p-4 shadow-sm border border-[#D1E0E3] dark:bg-transparent dark:border-white/10">
-        <h3 className="font-display font-bold text-sm text-[#2E3B42] dark:text-[#F5F7F8] mb-4">People you may know</h3>
+      <div className="glass rounded-2xl p-4 shadow-glass border border-[var(--card-border)]">
+        <h3 className="font-display font-bold text-sm text-[var(--text-main)] mb-4">People you may know</h3>
 
         {loading ? (
           <div className="flex justify-center py-4">
-            <i className="fa-solid fa-circle-notch fa-spin text-[#4A7A8C]" />
+            <i className="fa-solid fa-circle-notch fa-spin text-[var(--accent)]" />
           </div>
         ) : suggestions.length === 0 ? (
-          <p className="text-xs text-[#677A85]">No suggestions right now.</p>
+          <p className="text-xs text-sub">No suggestions right now.</p>
         ) : (
           <div className="space-y-4">
             {suggestions.map(person => {
@@ -60,22 +60,22 @@ export default function SidebarRight() {
                 <div key={person.id} className="flex items-center gap-3">
                   <Link to={personPath} className="shrink-0">
                     <img
-                      src={person.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.display_name || 'U')}&background=4A7A8C&color=fff`}
+                      src={person.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.display_name || 'U')}&background=00AFA0&color=fff`}
                       alt=""
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-10 h-10 rounded-full object-cover ring-2 ring-[var(--card-border)]"
                     />
                   </Link>
                   <div className="flex-1 truncate">
                     <Link to={personPath} className="hover:underline">
-                      <p className="text-sm font-semibold text-[#2E3B42] dark:text-[#F5F7F8] truncate">
+                      <p className="text-sm font-semibold text-[var(--text-main)] truncate">
                         {person.display_name || 'User'}
                       </p>
                     </Link>
-                    <p className="text-xs text-[#677A85] truncate font-display">@{person.username}</p>
+                    <p className="text-xs text-sub truncate font-display">@{person.username}</p>
                   </div>
                   <Link
                     to={personPath}
-                    className="shrink-0 text-xs font-semibold text-[#4A7A8C] bg-[#D1E0E3]/50 hover:bg-[#D1E0E3] px-3 py-1.5 rounded-full transition-colors"
+                    className="shrink-0 text-xs font-semibold text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 px-3 py-1.5 rounded-full transition-colors scale-tap"
                   >
                     View
                   </Link>

@@ -45,11 +45,11 @@ export default function SearchPage() {
     <AppShell>
       <main className="flex-1 overflow-y-auto px-4 py-6 view max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display font-bold text-xl text-[var(--text-main)]">
+          <h2 className="font-display font-extrabold text-2xl text-[var(--text-main)] tracking-tight">
             {t('searchTitle')}
           </h2>
           <div className="flex items-center gap-1.5 text-[11px] font-display text-sub">
-            <Shield size={13} className="text-[#8FBC94]" />
+            <Shield size={13} className="text-[var(--accent)]" />
             <span>Zero-tracking search</span>
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function SearchPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="field w-full rounded-2xl py-3.5 pl-11 pr-4 rtl:pl-4 rtl:pr-11 text-sm outline-none focus:border-[#4A7A8C]"
+            className="field w-full rounded-2xl py-3.5 pl-11 pr-4 rtl:pl-4 rtl:pr-11 text-sm outline-none focus:border-[var(--accent)]"
             placeholder={t('searchPlaceholder')}
           />
         </div>
@@ -87,7 +87,7 @@ export default function SearchPage() {
           ) : results.length === 0 ? (
             <div className="glass rounded-3xl p-10 text-center border border-[var(--card-border)]">
               <User size={28} className="text-sub mx-auto mb-2 opacity-60" />
-              <p className="text-xs text-sub">
+              <p className="text-xs text-sub font-body">
                 {query.trim() ? t('noResults') : 'Type a name or username to search privately.'}
               </p>
             </div>
@@ -106,14 +106,14 @@ export default function SearchPage() {
                         u.avatar_url ||
                         `https://ui-avatars.com/api/?name=${encodeURIComponent(
                           u.display_name || 'User'
-                        )}&background=4A7A8C&color=fff`
+                        )}&background=00AFA0&color=fff`
                       }
                       alt=""
                       className="w-11 h-11 rounded-full object-cover ring-2 ring-[var(--card-border)]"
                     />
                     <span
                       className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-[var(--bg)] ${online
-                          ? 'bg-[#8FBC94] shadow-[0_0_6px_rgba(143,188,148,0.8)]'
+                          ? 'bg-[var(--accent)] shadow-[0_0_6px_rgba(0,175,160,0.8)]'
                           : 'bg-[#8FA6B0] opacity-50'
                         }`}
                     />
@@ -126,14 +126,14 @@ export default function SearchPage() {
                       <span>{u.display_name}</span>
                       <i
                         className="fa-solid fa-badge-check text-[11px]"
-                        style={{ color: '#8FBC94' }}
+                        style={{ color: 'var(--accent)' }}
                       />
                     </Link>
                     <p className="text-xs text-sub truncate font-display">@{u.username}</p>
                   </div>
                   <Link
                     to={userPath}
-                    className="accent-bg text-[#F5F7F8] dark:text-[#10181C] text-xs font-bold px-3.5 py-1.5 rounded-full scale-tap transition"
+                    className="accent-bg text-white dark:text-[#070D0C] text-xs font-bold font-display px-3.5 py-1.5 rounded-full scale-tap transition"
                   >
                     {t('view')}
                   </Link>

@@ -230,7 +230,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                   author.avatar_url ||
                   `https://ui-avatars.com/api/?name=${encodeURIComponent(
                     author.display_name || 'User'
-                  )}&background=4A7A8C&color=fff`
+                  )}&background=00AFA0&color=fff`
                 }
                 alt=""
                 className="w-10 h-10 rounded-full object-cover ring-2 ring-[var(--card-border)]"
@@ -251,7 +251,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
 
           <button
             onClick={() => setShowMenu(true)}
-            className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[#4A7A8C]"
+            className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[var(--accent)]"
             aria-label="Options"
           >
             <MoreHorizontal size={16} className="text-sub" />
@@ -306,7 +306,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                 size={18}
                 className={
                   liked
-                    ? 'fill-[#4A7A8C] text-[#4A7A8C] dark:fill-[#CFE3E9] dark:text-[#CFE3E9]'
+                    ? 'fill-[var(--accent)] text-[var(--accent)]'
                     : 'text-sub'
                 }
               />
@@ -345,7 +345,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
               <textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
-                className="field w-full rounded-2xl p-3 text-sm outline-none focus:border-[#4A7A8C]"
+                className="field w-full rounded-2xl p-3 text-sm outline-none focus:border-[var(--accent)]"
                 rows={3}
               />
               <div className="flex gap-2 justify-end">
@@ -354,13 +354,13 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                     setEditing(false)
                     setEditContent(post.content || '')
                   }}
-                  className="field px-3.5 py-1.5 rounded-full text-xs font-semibold scale-tap"
+                  className="field px-3.5 py-1.5 rounded-full text-xs font-semibold scale-tap cursor-pointer"
                 >
                   {t('cancel')}
                 </button>
                 <button
                   onClick={handleEdit}
-                  className="accent-bg text-[#F5F7F8] dark:text-[#10181C] px-4 py-1.5 rounded-full text-xs font-bold scale-tap"
+                  className="accent-bg text-white dark:text-[#070D0C] px-4 py-1.5 rounded-full text-xs font-bold font-display scale-tap cursor-pointer"
                 >
                   {t('save')}
                 </button>
@@ -381,8 +381,8 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
               {poll && (
                 <div className="mt-3.5 rounded-2xl field p-4 border border-[var(--card-border)] space-y-3 bg-[var(--card-border)]/10">
                   <div className="flex items-center gap-2">
-                    <BarChart2 size={16} className="text-[#8FBC94]" />
-                    <h4 className="text-sm font-bold text-[var(--text-main)]">
+                    <BarChart2 size={16} className="text-[var(--accent)]" />
+                    <h4 className="text-sm font-bold font-display text-[var(--text-main)]">
                       {poll.question}
                     </h4>
                   </div>
@@ -401,20 +401,20 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                           disabled={voting}
                           onClick={() => handleVote(idx)}
                           className={`relative w-full overflow-hidden rounded-xl border p-3 text-left transition scale-tap cursor-pointer ${isSelected
-                              ? 'border-[#4A7A8C] bg-[#4A7A8C]/15 font-semibold text-[var(--text-main)]'
-                              : 'border-[var(--card-border)] bg-[var(--bg)]/60 hover:border-[#4A7A8C]/50 text-[var(--text-main)]'
+                              ? 'border-[var(--accent)] bg-[var(--accent)]/15 font-semibold text-[var(--text-main)]'
+                              : 'border-[var(--card-border)] bg-[var(--bg)]/60 hover:border-[var(--accent)]/50 text-[var(--text-main)]'
                             }`}
                         >
                           {hasVoted && (
                             <div
-                              className="absolute inset-y-0 left-0 bg-[#4A7A8C]/20 transition-all duration-500 pointer-events-none"
+                              className="absolute inset-y-0 left-0 bg-[var(--accent)]/20 transition-all duration-500 pointer-events-none"
                               style={{ width: `${pct}%` }}
                             />
                           )}
                           <div className="relative flex items-center justify-between text-xs z-10">
                             <div className="flex items-center gap-2">
                               {isSelected ? (
-                                <CheckCircle2 size={14} className="text-[#4A7A8C] dark:text-[#CFE3E9]" />
+                                <CheckCircle2 size={14} className="text-[var(--accent)]" />
                               ) : (
                                 <span className="w-3.5 h-3.5 rounded-full border border-sub/50 inline-block" />
                               )}
@@ -459,7 +459,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                           c.user?.avatar_url ||
                           `https://ui-avatars.com/api/?name=${encodeURIComponent(
                             c.user?.display_name || 'U'
-                          )}&background=4A7A8C&color=fff`
+                          )}&background=00AFA0&color=fff`
                         }
                         alt=""
                         className="w-7 h-7 rounded-full object-cover mt-0.5"
@@ -491,12 +491,12 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                 placeholder="Write a private reply…"
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                className="field flex-1 rounded-full px-4 py-2.5 text-xs outline-none focus:border-[#4A7A8C]"
+                className="field flex-1 rounded-full px-4 py-2.5 text-xs outline-none focus:border-[var(--accent)]"
               />
               <button
                 type="submit"
                 disabled={!commentText.trim() || submittingComment}
-                className="accent-bg text-[#F5F7F8] dark:text-[#10181C] px-4 py-2 rounded-full text-xs font-bold scale-tap disabled:opacity-50 cursor-pointer"
+                className="accent-bg text-white dark:text-[#070D0C] px-4 py-2 rounded-full text-xs font-bold font-display scale-tap disabled:opacity-50 cursor-pointer"
               >
                 {submittingComment ? '…' : 'Send'}
               </button>
@@ -582,7 +582,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                   name={`audience-${post.id}`}
                   checked={audienceChoice === 'approved'}
                   onChange={() => setAudienceChoice('approved')}
-                  className="w-4 h-4 accent-[#4A7A8C]"
+                  className="w-4 h-4 accent-[var(--accent)]"
                 />
               </label>
               <label className="flex items-center justify-between field rounded-2xl px-4 py-3 cursor-pointer">
@@ -592,7 +592,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                   name={`audience-${post.id}`}
                   checked={audienceChoice === 'close'}
                   onChange={() => setAudienceChoice('close')}
-                  className="w-4 h-4 accent-[#4A7A8C]"
+                  className="w-4 h-4 accent-[var(--accent)]"
                 />
               </label>
               <label className="flex items-center justify-between field rounded-2xl px-4 py-3 cursor-pointer">
@@ -602,7 +602,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                   name={`audience-${post.id}`}
                   checked={audienceChoice === 'disabled'}
                   onChange={() => setAudienceChoice('disabled')}
-                  className="w-4 h-4 accent-[#4A7A8C]"
+                  className="w-4 h-4 accent-[var(--accent)]"
                 />
               </label>
             </div>
@@ -611,7 +611,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                 setShowAudienceModal(false)
                 showToast(t('audienceSaved'))
               }}
-              className="w-full accent-bg text-[#F5F7F8] dark:text-[#10181C] rounded-full py-3 font-bold text-xs mt-5 scale-tap transition cursor-pointer"
+              className="w-full accent-bg text-white dark:text-[#070D0C] rounded-full py-3 font-bold font-display text-xs mt-5 scale-tap transition cursor-pointer"
             >
               {t('save')}
             </button>
