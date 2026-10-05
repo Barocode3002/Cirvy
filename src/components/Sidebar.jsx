@@ -214,10 +214,11 @@ export default function Sidebar({ side = 'left' }) {
   const mainNavItems = [
     { to: '/feed', label: 'Home', icon: Home },
     { to: '/search', label: 'Search', icon: Search },
+    { to: '/messages', label: 'Messages', icon: MessageSquare },
     { to: '/create-post', label: 'Create', icon: PlusSquare },
     { to: '/notifications', label: 'Notifications', icon: Bell, badge: unreadCount },
     { to: '/friends', label: 'Friends', icon: Users },
-    { to: '/messages', label: 'Chats (Coming soon)', icon: MessageSquare },
+
   ]
 
   return (

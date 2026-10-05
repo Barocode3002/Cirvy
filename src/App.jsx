@@ -8,6 +8,7 @@ import FriendRequestsPage from '@/pages/FriendRequestsPage'
 import SearchPage from '@/pages/SearchPage'
 import OnboardingPage from '@/pages/OnboardingPage'
 import ChatPage from '@/pages/ChatPage'
+import MessagesListPage from '@/pages/MessagesListPage'
 import CreatePostPage from '@/pages/CreatePostPage'
 import NotificationsPage from '@/pages/NotificationsPage'
 import SettingsPage from '@/pages/SettingsPage'
@@ -118,6 +119,14 @@ export default function App() {
         />
         <Route 
           path="/messages"
+          element={
+            <ProtectedRoute>
+              <MessagesListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route 
+          path="/chat/:friendId"
           element={
             <ProtectedRoute>
               <ChatPage />

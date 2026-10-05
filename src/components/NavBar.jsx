@@ -1,85 +1,268 @@
-// src/components/NavBar.jsx
-// Persistent Header and Bottom Navigation matching the refined Cirvy design system.
-
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import {
+  Home,
+  Search,
+  PlusSquare,
+  MessageSquare,
+  User,
+  Bell,
+} from 'lucide-react'
+
+import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import { useUI } from '@/contexts/UIContext'
 import SettingsModal from './SettingsModal'
-import CirvyLogo from './CirvyLogo'
 
 export default function NavBar() {
   const { user, profile } = useAuth()
-  const { lang, toggleLang, t } = useUI()
 
-  const currentHandle = profile?.username || user?.user_metadata?.username
-  const profilePath = currentHandle ? `/${currentHandle}` : (user ? `/profile/${user.id}` : '/login')
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  const currentHandle =
+    profile?.username ||
+    user?.user_metadata?.username
+
+  const profilePath = currentHandle
+    ? `/${currentHandle}`
+    : user
+      ? `/profile/${user.id}`
+      : '/login'
+
+  useEffect(() => {
+    if (!user?.id) {
+      setUnreadCount(0)
+      return undefined
+    }
+
+    let active = true
+    let channel = null
+
+    const userId = user.id
+
+    async function loadUnreadCount() {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('id', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('user_id', userId)
+        .eq('is_read', false)
+
+      if (!active) return
+
+      if (error) {
+        console.error(
+          '[CIRVY NAV NOTIFICATIONS] Unread count error:',
+          error
+        )
+        return
+      }
+
+      setUnreadCount(count || 0)
+    }
+
+    /*
+     * IMPORTANT:
+     *
+     * All postgres_changes listeners MUST be attached
+     * BEFORE subscribe().
+     *
+     * This fixes:
+     *
+     * "cannot add postgres_changes callbacks after subscribe()"
+     */
+    channel = supabase
+      .channel(`cirvy-nav-notifications:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          if (!active) return
+
+          const row = payload?.new
+
+          if (!row) return
+
+          if (row.is_read === false) {
+            setUnreadCount((prev) => prev + 1)
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          if (!active) return
+
+          const oldRead = payload?.old?.is_read
+          const newRead = payload?.new?.is_read
+
+          if (
+            oldRead === false &&
+            newRead === true
+          ) {
+            setUnreadCount((prev) =>
+              Math.max(0, prev - 1)
+            )
+          }
+
+          if (
+            oldRead === true &&
+            newRead === false
+          ) {
+            setUnreadCount((prev) => prev + 1)
+          }
+        }
+      )
+      .subscribe((status, error) => {
+        if (!active) return
+
+        console.log(
+          `[CIRVY NAV NOTIFICATIONS] ${status}`,
+          error || ''
+        )
+
+        if (status === 'SUBSCRIBED') {
+          console.log(
+            '✅ CIRVY nav notifications realtime connected'
+          )
+        }
+
+        if (
+          status === 'CHANNEL_ERROR' ||
+          status === 'TIMED_OUT'
+        ) {
+          console.error(
+            '❌ CIRVY nav notifications realtime problem:',
+            status,
+            error || ''
+          )
+        }
+      })
+
+    /*
+     * Load initial count after channel is configured.
+     */
+    loadUnreadCount()
+
+    return () => {
+      active = false
+
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [user?.id])
 
   const navItems = [
-    { to: '/feed', icon: 'fa-solid fa-house', label: t('navFeed') || 'Home' },
-    { to: '/search', icon: 'fa-solid fa-magnifying-glass', label: t('navSearch') || 'Search' },
-    { to: '/create-post', icon: 'fa-solid fa-square-plus', label: 'Create' },
-    { to: '/notifications', icon: 'fa-solid fa-bell', label: 'Activity' },
-    { to: profilePath, icon: 'fa-solid fa-user', label: t('navProfile') || 'Profile' },
+    {
+      to: '/feed',
+      icon: Home,
+      label: 'Home',
+    },
+    {
+      to: '/search',
+      icon: Search,
+      label: 'Search',
+    },
+    {
+      to: '/create-post',
+      icon: PlusSquare,
+      label: 'Create',
+    },
+    {
+      to: '/messages',
+      icon: MessageSquare,
+      label: 'Messages',
+    },
+    {
+      to: '/notifications',
+      icon: Bell,
+      label: 'Notifications',
+      badge: unreadCount,
+    },
+    {
+      to: profilePath,
+      icon: User,
+      label: 'Profile',
+    },
   ]
 
   return (
     <>
-      {/* ============ STICKY HEADER ============ */}
-      <header className="rounded-2xl sticky top-0 z-30 glass px-4 py-3 flex items-center justify-between w-full transition-all duration-300 md:hidden border-b border-[var(--card-border)]">
-        <NavLink to="/feed" className="flex items-center gap-2.5 group">
-          <CirvyLogo variant="full" size={24} />
-        </NavLink>
-
-        <div className="flex items-center gap-2">
-          {/* Language Toggle */}
-          <button
-            onClick={toggleLang}
-            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-display font-bold scale-tap transition-all hover:border-[var(--accent)] cursor-pointer"
-            title="Toggle Language"
-          >
-            <span>{lang === 'ar' ? 'EN' : 'AR'}</span>
-          </button>
-          {/* Settings Trigger */}
-          <NavLink
-            to="/settings"
-            className="w-8 h-8 rounded-full field flex items-center justify-center text-xs font-semibold scale-tap transition-all hover:border-[var(--accent)] cursor-pointer"
-            title="Settings"
-            aria-label="Settings"
-          >
-            <i className="fa-solid fa-gear text-xs text-sub" />
-          </NavLink>
-        </div>
-      </header>
-
-      {/* ============ BOTTOM NAV ============ */}
       <nav
         id="bottomNav"
-        className="rounded-2xl fixed bottom-2 left-2 right-2 glass border border-[var(--card-border)] px-2 pt-2 z-30 shadow-lg md:hidden"
+        className="fixed bottom-0 left-0 right-0 glass border-t border-[var(--card-border)] px-2 py-2 z-30 shadow-lg md:hidden"
         style={{
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)',
+          paddingBottom:
+            'calc(env(safe-area-inset-bottom) + 8px)',
         }}
       >
-        <div className="grid grid-cols-5">
-          {navItems.map(({ to, icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `nav-item flex flex-col items-center gap-1 py-1.5 rounded-xl scale-tap transition-all cursor-pointer ${isActive
-                  ? 'active text-[var(--text-main)] font-bold'
-                  : 'text-sub hover:text-[var(--text-main)]'
-                }`
-              }
-            >
-              <i className={`${icon} nav-ico text-[17px]`} />
-              <span className="nav-dot w-1 h-1 rounded-full bg-[var(--accent)]" />
-              <span className="text-[10px] font-medium leading-none">{label}</span>
-            </NavLink>
-          ))}
+        <div className="grid grid-cols-6 max-w-md mx-auto items-center">
+          {navItems.map(
+            ({
+              to,
+              icon: Icon,
+              label,
+              badge,
+            }) => (
+              <NavLink
+                key={to}
+                to={to}
+                aria-label={label}
+                className={({ isActive }) =>
+                  `relative flex flex-col items-center justify-center py-1 scale-tap transition-colors cursor-pointer ${
+                    isActive
+                      ? 'text-[var(--accent)]'
+                      : 'text-sub hover:text-[var(--text-main)]'
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <span className="relative">
+                      <Icon
+                        size={21}
+                        strokeWidth={
+                          isActive ? 2.2 : 1.8
+                        }
+                      />
+
+                      {badge > 0 && (
+                        <span className="absolute -top-2.5 -right-3 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none ring-2 ring-[var(--bg)]">
+                          {badge > 99
+                            ? '99+'
+                            : badge}
+                        </span>
+                      )}
+                    </span>
+
+                    <span
+                      className={`w-1 h-1 rounded-full bg-[var(--accent)] mt-1 transition-opacity duration-200 ${
+                        isActive
+                          ? 'opacity-100'
+                          : 'opacity-0'
+                      }`}
+                    />
+                  </>
+                )}
+              </NavLink>
+            )
+          )}
         </div>
       </nav>
 
-      {/* Settings Modal (Global) */}
       <SettingsModal />
     </>
   )

@@ -2,13 +2,15 @@
 // Friends-only Feed view — friends posts + create box at top.
 
 import { useEffect, useState } from 'react'
-import { ShieldCheck, Users, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ShieldCheck, Users, Sparkles, Bell, MessageSquare, Plus } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI } from '@/contexts/UIContext'
 import { supabase } from '@/lib/supabase'
 import PostCard from '@/components/PostCard'
 import CreatePostBox from '@/components/CreatePostBox'
 import AppShell from '@/components/AppShell'
+import CirvyLogo from '@/components/CirvyLogo'
 
 export default function FeedPage() {
   const { user } = useAuth()
@@ -152,8 +154,32 @@ export default function FeedPage() {
 
   return (
     <AppShell rightSidebar>
-      <main className="min-w-0 py-2 lg:max-w-2xl mx-auto">
-        <header className="mb-6 flex items-end justify-between">
+      <main className="min-w-0 py-1 sm:py-2 max-w-xl mx-auto space-y-5">
+        {/* Mobile Mockup Header: Cirvy wordmark + Bell & Chat icons */}
+        <header className="flex items-center justify-between px-1 py-1 md:hidden">
+          <Link to="/feed" className="flex items-center gap-2 group">
+            <CirvyLogo variant="full" size={28} />
+          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/notifications"
+              className="w-9 h-9 flex items-center justify-center text-[var(--text-main)] hover:text-[var(--accent)] scale-tap transition cursor-pointer"
+              aria-label="Activity"
+            >
+              <Bell size={22} />
+            </Link>
+            <Link
+              to="/messages"
+              className="w-9 h-9 flex items-center justify-center text-[var(--text-main)] hover:text-[var(--accent)] scale-tap transition cursor-pointer"
+              aria-label="Messages"
+            >
+              <MessageSquare size={22} />
+            </Link>
+          </div>
+        </header>
+
+        {/* Desktop Header: Circle Status & Privacy Badge */}
+        <header className="hidden md:flex items-end justify-between pt-1">
           <div>
             <p className="mb-1 text-[10px] font-bold font-display uppercase tracking-[0.2em] text-sub">
               Your Circle
@@ -162,28 +188,37 @@ export default function FeedPage() {
               Good to see you.
             </h1>
           </div>
-          <div className="hidden items-center gap-2 rounded-full field px-3.5 py-1.5 text-xs font-semibold text-[var(--text-main)] sm:flex border border-[var(--card-border)]">
+          <div className="flex items-center gap-2 rounded-full field px-3.5 py-1.5 text-xs font-semibold text-[var(--text-main)] border border-[var(--card-border)]">
             <ShieldCheck size={14} className="accent-text" />
             <span className="font-medium text-[11px]">Private by default</span>
           </div>
         </header>
 
-        {/* Composer at top of feed */}
-        <div className="mb-6">
-          <CreatePostBox onCreate={handleCreatePost} currentUser={user} />
-        </div>
+        {/* Stories row: Real functional shortcut linking to Create Post (No decorative fake circles) */}
+        <section aria-label="Stories and quick create" className="pt-1">
+          <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-none">
+            <Link
+              to="/create-post"
+              className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
+            >
+              <div className="w-16 h-16 rounded-full border-2 border-[var(--accent)] flex items-center justify-center bg-[var(--card-bg)] shadow-sm group-hover:scale-105 transition-transform scale-tap">
+                <Plus size={24} className="text-[var(--accent)]" />
+              </div>
+              <span className="text-[11px] font-medium text-sub group-hover:text-[var(--text-main)] transition-colors">
+                Your story
+              </span>
+            </Link>
+          </div>
+        </section>
 
-        <div className="mb-5 flex items-center gap-3">
-          <Users size={15} className="text-sub" />
-          <h2 className="text-[11px] font-bold font-display uppercase tracking-[0.16em] text-[var(--text-main)]">
-            Latest from your circle
-          </h2>
-          <div className="h-px flex-1 bg-[var(--card-border)]" />
+        {/* Desktop Composer box */}
+        <div className="hidden md:block">
+          <CreatePostBox onCreate={handleCreatePost} currentUser={user} />
         </div>
 
         {/* Feed List */}
         {loading ? (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {[1, 2].map((n) => (
               <div
                 key={n}
@@ -212,7 +247,7 @@ export default function FeedPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {posts.map((post) => (
               <PostCard
                 key={post.id}

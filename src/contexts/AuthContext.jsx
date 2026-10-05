@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { ensureUserKeys } from '@/lib/e2ee'
 
 // --------------------------------------------------------------------------
 // AuthContext — the "single source of truth" for authentication state.
@@ -34,6 +35,8 @@ export function AuthProvider({ children }) {
       if (!error && data) {
         lastFetchedUid.current = userId
         setProfile(data)
+        // Ensure user's E2EE keys are initialized in IndexedDB & Supabase
+        ensureUserKeys(userId).catch(() => {})
         return data
       }
     } catch {
@@ -68,6 +71,7 @@ export function AuthProvider({ children }) {
         },
         { onConflict: 'id', ignoreDuplicates: true }
       )
+      await ensureUserKeys(authUser.id)
     } catch {
       // Profile may already exist — that's fine
     }
@@ -147,6 +151,7 @@ export function AuthProvider({ children }) {
           display_name: displayName,
           onboarded: false,
         })
+        await ensureUserKeys(data.user.id)
         await fetchProfile(data.user.id, true)
       } catch {
         // Ignored, can be done later
@@ -186,6 +191,7 @@ export function AuthProvider({ children }) {
           display_name: dName,
           onboarded: false,
         })
+        await ensureUserKeys(data.user.id)
         await fetchProfile(data.user.id, true)
       } catch (err) {
         console.error('Error creating profile after OTP verify:', err)

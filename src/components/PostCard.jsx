@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useUI } from '@/contexts/UIContext'
-import { Heart, MessageSquare, Send, MoreHorizontal, EyeOff, Shield, Trash2, Edit3, BarChart2, CheckCircle2 } from 'lucide-react'
+import { Heart, MessageSquare, Send, MoreHorizontal, EyeOff, Shield, Trash2, Edit3, BarChart2, CheckCircle2, Share2 } from 'lucide-react'
 
 export default function PostCard({ post, currentUserId, onPostUpdated }) {
   const { t, showToast } = useUI()
@@ -219,10 +219,10 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
     <>
       <article
         id={`post-${post.id}`}
-        className="glass rounded-3xl overflow-hidden shadow-glass transition-all duration-300 border border-[var(--card-border)]"
+        className="glass rounded-[1.75rem] overflow-hidden shadow-glass transition-all duration-300 border border-[var(--card-border)] bg-[var(--card-bg)]"
       >
         {/* Post Header */}
-        <div className="flex items-center justify-between px-5 py-3.5">
+        <div className="flex items-center justify-between px-4 pt-4 pb-3">
           <div className="flex items-center gap-3">
             <Link to={`/${author.username || author.id}`}>
               <img
@@ -241,20 +241,20 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                 to={`/${author.username || author.id}`}
                 className="text-sm font-bold flex items-center gap-1.5 hover:underline text-[var(--text-main)]"
               >
-                <span>{author.display_name || 'User'}</span>
+                <span>{author.username || author.display_name || 'user'}</span>
               </Link>
               <p className="text-[11px] text-sub mt-0.5">
-                @{author.username || 'user'} · {timeAgo}
+                {timeAgo}
               </p>
             </div>
           </div>
 
           <button
             onClick={() => setShowMenu(true)}
-            className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[var(--accent)]"
+            className="w-8 h-8 rounded-full flex items-center justify-center scale-tap transition cursor-pointer text-sub hover:text-[var(--text-main)]"
             aria-label="Options"
           >
-            <MoreHorizontal size={16} className="text-sub" />
+            <MoreHorizontal size={18} />
           </button>
         </div>
 
@@ -272,7 +272,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
           return (
             <>
               {videoSrc && (
-                <div className="w-full bg-black/40 overflow-hidden">
+                <div className="mx-3 rounded-2xl bg-black/40 overflow-hidden border border-[var(--card-border)]/40">
                   <video
                     src={videoSrc}
                     controls
@@ -282,7 +282,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
                 </div>
               )}
               {imageSrc && (
-                <div className="w-full bg-[var(--card-border)]/20 overflow-hidden">
+                <div className="mx-3 rounded-2xl bg-[var(--card-border)]/20 overflow-hidden border border-[var(--card-border)]/40">
                   <img
                     src={imageSrc}
                     alt="Post media"
@@ -296,50 +296,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
         })()}
 
         {/* Post Body & Actions */}
-        <div className="px-5 py-4">
-          <div className="flex items-center gap-5 mb-3">
-            <button
-              onClick={toggleLike}
-              className="flex items-center gap-1.5 text-xs font-bold scale-tap transition cursor-pointer text-[var(--text-main)]"
-            >
-              <Heart
-                size={18}
-                className={
-                  liked
-                    ? 'fill-[var(--accent)] text-[var(--accent)]'
-                    : 'text-sub'
-                }
-              />
-              <span>{formatNum(likeCount)}</span>
-            </button>
-
-            <button
-              onClick={handleToggleComments}
-              className="flex items-center gap-1.5 text-xs font-bold scale-tap transition cursor-pointer text-[var(--text-main)]"
-            >
-              <MessageSquare size={17} className="text-sub" />
-              <span>{formatNum(comments.length)}</span>
-            </button>
-
-            <button
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: 'Cirvy Post',
-                    text: post.content,
-                    url: window.location.href,
-                  })
-                } else {
-                  showToast('Link copied to clipboard')
-                }
-              }}
-              className="flex items-center gap-1.5 text-xs font-medium scale-tap transition ms-auto cursor-pointer text-sub hover:text-[var(--text-main)]"
-              aria-label="Share post"
-            >
-              <Send size={16} />
-            </button>
-          </div>
-
+        <div className="px-4 py-3">
           {editing ? (
             <div className="space-y-2 mt-2">
               <textarea
@@ -369,17 +326,14 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
           ) : (
             <div>
               {post.content && (
-                <p className="text-sm text-[var(--text-main)] leading-relaxed whitespace-pre-wrap">
-                  <span className="font-bold mr-1.5">
-                    @{author.username || 'user'}
-                  </span>
+                <p className="text-sm text-[var(--text-main)] leading-relaxed whitespace-pre-wrap mb-3">
                   {post.content}
                 </p>
               )}
 
               {/* Interactive Poll Card */}
               {poll && (
-                <div className="mt-3.5 rounded-2xl field p-4 border border-[var(--card-border)] space-y-3 bg-[var(--card-border)]/10">
+                <div className="mb-3 rounded-2xl field p-4 border border-[var(--card-border)] space-y-3 bg-[var(--card-border)]/10">
                   <div className="flex items-center gap-2">
                     <BarChart2 size={16} className="text-[var(--accent)]" />
                     <h4 className="text-sm font-bold font-display text-[var(--text-main)]">
@@ -438,6 +392,51 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
               )}
             </div>
           )}
+
+          {/* Action Row matching Mockup: Like count, Comment count, Share button */}
+          <div className="flex items-center gap-6 pt-2 pb-1 text-sub">
+            <button
+              onClick={toggleLike}
+              className="flex items-center gap-2 text-xs font-semibold text-sub hover:text-[var(--text-main)] transition scale-tap cursor-pointer"
+            >
+              <Heart
+                size={18}
+                className={
+                  liked
+                    ? 'fill-[var(--accent)] text-[var(--accent)]'
+                    : 'text-sub'
+                }
+              />
+              <span className="text-[var(--text-main)]">{formatNum(likeCount)}</span>
+            </button>
+
+            <button
+              onClick={handleToggleComments}
+              className="flex items-center gap-2 text-xs font-semibold text-sub hover:text-[var(--text-main)] transition scale-tap cursor-pointer"
+            >
+              <MessageSquare size={17} className="text-sub" />
+              <span className="text-[var(--text-main)]">{formatNum(comments.length)}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: 'Cirvy Post',
+                    text: post.content,
+                    url: window.location.href,
+                  })
+                } else {
+                  showToast('Link copied to clipboard')
+                }
+              }}
+              className="flex items-center gap-2 text-xs font-semibold text-sub hover:text-[var(--text-main)] transition scale-tap cursor-pointer"
+              aria-label="Share post"
+            >
+              <Share2 size={16} className="text-sub" />
+              <span>Share</span>
+            </button>
+          </div>
         </div>
 
         {/* Expandable Comment Drawer */}

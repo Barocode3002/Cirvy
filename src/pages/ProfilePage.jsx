@@ -6,7 +6,15 @@ import AppShell from '@/components/AppShell'
 import { useUI } from '@/contexts/UIContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePresence } from '@/contexts/PresenceContext'
-import { Camera, Image, X, Heart, MessageSquare, Send, Settings } from 'lucide-react'
+import {
+  Camera,
+  Image,
+  X,
+  Heart,
+  MessageSquare,
+  Send,
+  Settings,
+} from 'lucide-react'
 
 export default function ProfilePage() {
   const { userId, username } = useParams()
@@ -33,7 +41,7 @@ export default function ProfilePage() {
   const [commentInput, setCommentInput] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
 
-  // Edit Bio modal state
+  // Edit Profile modal state
   const [showEditBio, setShowEditBio] = useState(false)
   const [bioInput, setBioInput] = useState('')
   const [savingBio, setSavingBio] = useState(false)
@@ -49,8 +57,10 @@ export default function ProfilePage() {
       setAvatarPreview('')
       return undefined
     }
+
     const objectUrl = URL.createObjectURL(avatarFile)
     setAvatarPreview(objectUrl)
+
     return () => URL.revokeObjectURL(objectUrl)
   }, [avatarFile])
 
@@ -63,7 +73,12 @@ export default function ProfilePage() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      if (!user) return
+
+      if (!user) {
+        setLoading(false)
+        return
+      }
+
       setCurrentUserId(user.id)
 
       if (!rawParam) {
@@ -73,15 +88,21 @@ export default function ProfilePage() {
       }
 
       // Check if param is UUID or username
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        rawParam
-      )
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          rawParam
+        )
+
       const cleanParam = rawParam.toLowerCase().replace(/^@/, '')
 
-      // 1) Find the target user profile row
+      // 1) Find target profile
       let targetUserQuery = supabase.from('profiles')
+
       if (isUuid) {
-        targetUserQuery = targetUserQuery.select('id, username').eq('id', rawParam).maybeSingle()
+        targetUserQuery = targetUserQuery
+          .select('id, username')
+          .eq('id', rawParam)
+          .maybeSingle()
       } else {
         targetUserQuery = targetUserQuery
           .select('id, username')
@@ -90,6 +111,7 @@ export default function ProfilePage() {
       }
 
       const { data: baseProfile } = await targetUserQuery
+
       if (!baseProfile) {
         setProfile(null)
         setLoading(false)
@@ -101,6 +123,7 @@ export default function ProfilePage() {
 
       // 2) Check friendship status
       let isFr = isOwn
+
       if (!isOwn) {
         const { data: friendship } = await supabase
           .from('friendships')
@@ -110,11 +133,13 @@ export default function ProfilePage() {
           )
           .eq('status', 'accepted')
           .maybeSingle()
+
         isFr = !!friendship
       }
+
       setIsFriend(isFr)
 
-      // 3) Fetch profile columns (privacy enforcement: bio only for friends)
+      // 3) Fetch profile
       const columns = isFr
         ? 'id, username, display_name, avatar_url, bio, created_at'
         : 'id, username, display_name, avatar_url'
@@ -126,9 +151,14 @@ export default function ProfilePage() {
         .single()
 
       setProfile(fullProfile)
-      if (fullProfile?.bio) setBioInput(fullProfile.bio)
 
-      // Total friends count for this profile
+      if (fullProfile?.bio) {
+        setBioInput(fullProfile.bio)
+      } else {
+        setBioInput('')
+      }
+
+      // Total friends count
       const { data: profileFriendships } = await supabase
         .from('friendships')
         .select('requester_id, addressee_id')
@@ -138,9 +168,10 @@ export default function ProfilePage() {
       const profileFriendIds = (profileFriendships || []).map((f) =>
         f.requester_id === targetId ? f.addressee_id : f.requester_id
       )
+
       setFriendCount(profileFriendIds.length)
 
-      // Mutual friends calculation
+      // Mutual friends
       if (!isOwn) {
         const { data: viewerFriendships } = await supabase
           .from('friendships')
@@ -152,18 +183,24 @@ export default function ProfilePage() {
           f.requester_id === user.id ? f.addressee_id : f.requester_id
         )
 
-        const mutuals = viewerFriendIds.filter((id) => profileFriendIds.includes(id))
+        const mutuals = viewerFriendIds.filter((id) =>
+          profileFriendIds.includes(id)
+        )
+
         setMutualFriendCount(mutuals.length)
       } else {
         setMutualFriendCount(0)
       }
 
+      // Post count
       const { count: pCount } = await supabase
         .from('posts')
         .select('*', { count: 'exact', head: true })
         .eq('author_id', targetId)
+
       setPostCount(pCount || 0)
 
+      // Posts visible to friends only
       if (isFr) {
         const { data: userPosts } = await supabase
           .from('posts')
@@ -179,14 +216,17 @@ export default function ProfilePage() {
           like_count: p.likes?.[0]?.count || 0,
           comment_count: p.comments?.[0]?.count || 0,
         }))
+
         setPosts(formatted)
+      } else {
+        setPosts([])
       }
 
       setLoading(false)
     }
   }, [rawParam])
 
-  // Open post detail modal and load likes/comments
+  // Open post detail modal
   async function openPostDetail(post) {
     setSelectedPost(post)
     setSelectedPostLikeCount(post.like_count || 0)
@@ -200,13 +240,16 @@ export default function ProfilePage() {
         .eq('post_id', post.id)
         .eq('user_id', currentUserId)
         .maybeSingle()
+
       setSelectedPostLiked(!!data)
     }
 
     // Load comments
     const { data: commentData } = await supabase
       .from('comments')
-      .select('id, content, created_at, user:user_id(id, username, display_name, avatar_url)')
+      .select(
+        'id, content, created_at, user:user_id(id, username, display_name, avatar_url)'
+      )
       .eq('post_id', post.id)
       .order('created_at', { ascending: true })
 
@@ -216,9 +259,13 @@ export default function ProfilePage() {
 
   async function toggleDetailLike() {
     if (!selectedPost || !currentUserId) return
-    if (selectedPostLiked) {
+
+    const wasLiked = selectedPostLiked
+
+    if (wasLiked) {
       setSelectedPostLiked(false)
       setSelectedPostLikeCount((c) => Math.max(0, c - 1))
+
       await supabase
         .from('likes')
         .delete()
@@ -227,20 +274,23 @@ export default function ProfilePage() {
     } else {
       setSelectedPostLiked(true)
       setSelectedPostLikeCount((c) => c + 1)
-      await supabase
-        .from('likes')
-        .insert({ post_id: selectedPost.id, user_id: currentUserId })
+
+      await supabase.from('likes').insert({
+        post_id: selectedPost.id,
+        user_id: currentUserId,
+      })
     }
-    // Update count in post list state
+
+    // Update post list count
     setPosts((prev) =>
       prev.map((p) =>
         p.id === selectedPost.id
           ? {
-            ...p,
-            like_count: selectedPostLiked
-              ? Math.max(0, p.like_count - 1)
-              : p.like_count + 1,
-          }
+              ...p,
+              like_count: wasLiked
+                ? Math.max(0, p.like_count - 1)
+                : p.like_count + 1,
+            }
           : p
       )
     )
@@ -248,39 +298,68 @@ export default function ProfilePage() {
 
   async function handleAddDetailComment(e) {
     e.preventDefault()
-    if (!commentInput.trim() || submittingComment || !selectedPost) return
+
+    if (
+      !commentInput.trim() ||
+      submittingComment ||
+      !selectedPost ||
+      !currentUserId
+    ) {
+      return
+    }
+
     const text = commentInput.trim()
+
     setCommentInput('')
     setSubmittingComment(true)
 
-    const { error } = await supabase
-      .from('comments')
-      .insert({ post_id: selectedPost.id, user_id: currentUserId, content: text })
+    const { error } = await supabase.from('comments').insert({
+      post_id: selectedPost.id,
+      user_id: currentUserId,
+      content: text,
+    })
 
     if (!error) {
       const { data: refreshed } = await supabase
         .from('comments')
-        .select('id, content, created_at, user:user_id(id, username, display_name, avatar_url)')
+        .select(
+          'id, content, created_at, user:user_id(id, username, display_name, avatar_url)'
+        )
         .eq('post_id', selectedPost.id)
         .order('created_at', { ascending: true })
+
       setSelectedPostComments(refreshed || [])
+
       setPosts((prev) =>
         prev.map((p) =>
-          p.id === selectedPost.id ? { ...p, comment_count: p.comment_count + 1 } : p
+          p.id === selectedPost.id
+            ? {
+                ...p,
+                comment_count: (p.comment_count || 0) + 1,
+              }
+            : p
         )
       )
     }
+
     setSubmittingComment(false)
   }
 
   async function handleSaveBio(e) {
     e.preventDefault()
+
     setSavingBio(true)
+    setAvatarError('')
+
     try {
       let avatarUrl = profile.avatar_url || null
+
       if (avatarFile) {
-        const extension = avatarFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+        const extension =
+          avatarFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+
         const path = `${currentUserId}/${crypto.randomUUID()}.${extension}`
+
         const { error: uploadError } = await supabase.storage
           .from('profile-media')
           .upload(path, avatarFile, {
@@ -288,23 +367,35 @@ export default function ProfilePage() {
             contentType: avatarFile.type,
             upsert: false,
           })
+
         if (uploadError) {
           avatarUrl = await fileToDataUrl(avatarFile)
         } else {
-          avatarUrl = supabase.storage.from('profile-media').getPublicUrl(path).data
-            .publicUrl
+          avatarUrl =
+            supabase.storage.from('profile-media').getPublicUrl(path).data
+              .publicUrl
         }
       }
 
       const { error } = await supabase
         .from('profiles')
-        .update({ bio: bioInput.trim(), avatar_url: avatarUrl })
+        .update({
+          bio: bioInput.trim(),
+          avatar_url: avatarUrl,
+        })
         .eq('id', currentUserId)
+
       if (error) throw error
 
-      setProfile((prev) => ({ ...prev, bio: bioInput.trim(), avatar_url: avatarUrl }))
+      setProfile((prev) => ({
+        ...prev,
+        bio: bioInput.trim(),
+        avatar_url: avatarUrl,
+      }))
+
       setAvatarFile(null)
       setShowEditBio(false)
+
       showToast('Profile updated')
     } catch {
       setAvatarError('Your profile could not be updated. Try again.')
@@ -316,37 +407,58 @@ export default function ProfilePage() {
   function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
+
       reader.onload = () => resolve(reader.result)
       reader.onerror = reject
+
       reader.readAsDataURL(file)
     })
   }
 
   function handleAvatarChange(event) {
     const file = event.target.files?.[0]
+
     if (!file) return
-    if (!file.type.startsWith('image/')) return setAvatarError('Choose an image file.')
-    if (file.size > 4 * 1024 * 1024)
-      return setAvatarError('Profile pictures must be smaller than 4 MB.')
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Choose an image file.')
+      return
+    }
+
+    if (file.size > 4 * 1024 * 1024) {
+      setAvatarError('Profile pictures must be smaller than 4 MB.')
+      return
+    }
+
     setAvatarError('')
     setAvatarFile(file)
   }
 
   function formatCount(n) {
-    if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'K'
+    if (n >= 1000) {
+      return (n / 1000).toFixed(1).replace('.0', '') + 'K'
+    }
+
     return n
   }
 
   function formatRelativeTime(dateStr) {
     if (!dateStr) return 'now'
+
     const diff = Date.now() - new Date(dateStr).getTime()
     const mins = Math.floor(diff / 60000)
+
     if (mins < 1) return 'now'
     if (mins < 60) return `${mins}m ago`
+
     const hrs = Math.floor(mins / 60)
+
     if (hrs < 24) return `${hrs}h ago`
+
     const days = Math.floor(hrs / 24)
+
     if (days < 7) return `${days}d ago`
+
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -362,12 +474,14 @@ export default function ProfilePage() {
             <div className="w-36 h-5 rounded-lg bg-[var(--card-border)] mb-2" />
             <div className="w-24 h-3.5 rounded-lg bg-[var(--card-border)] mb-4" />
             <div className="w-56 h-10 rounded-2xl bg-[var(--card-border)] mb-6" />
+
             <div className="flex gap-10">
               <div className="w-12 h-8 rounded bg-[var(--card-border)]" />
               <div className="w-12 h-8 rounded bg-[var(--card-border)]" />
               <div className="w-12 h-8 rounded bg-[var(--card-border)]" />
             </div>
           </div>
+
           <div className="grid grid-cols-3 gap-2 mt-8">
             <div className="aspect-square rounded-2xl bg-[var(--card-border)]" />
             <div className="aspect-square rounded-2xl bg-[var(--card-border)]" />
@@ -386,10 +500,14 @@ export default function ProfilePage() {
             <div className="w-12 h-12 rounded-2xl accent-soft-bg flex items-center justify-center mx-auto mb-3 text-[var(--accent)]">
               <i className="fa-solid fa-magnifying-glass text-lg" />
             </div>
+
             <h3 className="font-display font-bold text-base mb-1 text-[var(--text-main)]">
               Profile not found
             </h3>
-            <p className="text-xs text-sub font-body">@{rawParam.replace(/^@/, '')} does not exist on Cirvy.</p>
+
+            <p className="text-xs text-sub font-body">
+              @{rawParam.replace(/^@/, '')} does not exist on Cirvy.
+            </p>
           </div>
         </div>
       </AppShell>
@@ -399,9 +517,15 @@ export default function ProfilePage() {
   const isOwnProfile = currentUserId === profile.id
 
   async function handleLogout() {
-    if (window.confirm(t('logoutConfirm') || 'Are you sure you want to log out?')) {
+    if (
+      window.confirm(
+        t('logoutConfirm') || 'Are you sure you want to log out?'
+      )
+    ) {
       await signOut()
+
       showToast(t('loggedOut') || 'You have been logged out securely.')
+
       navigate('/login')
     }
   }
@@ -421,6 +545,7 @@ export default function ProfilePage() {
               >
                 <Settings size={16} className="text-sub" />
               </button>
+
               <button
                 onClick={() => setShowEditBio(true)}
                 className="w-9 h-9 rounded-full field flex items-center justify-center scale-tap transition cursor-pointer hover:border-[var(--accent)]"
@@ -429,6 +554,7 @@ export default function ProfilePage() {
               >
                 <i className="fa-solid fa-pen text-sm text-sub" />
               </button>
+
               <button
                 onClick={handleLogout}
                 className="h-9 px-3.5 rounded-full field flex items-center gap-1.5 text-xs font-semibold text-sub hover:text-[var(--text-main)] hover:border-[var(--accent)] scale-tap transition cursor-pointer"
@@ -441,7 +567,7 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Profile Card / Header */}
+        {/* Profile Header */}
         <div className="flex flex-col items-center text-center">
           <div className="relative">
             <img
@@ -454,12 +580,13 @@ export default function ProfilePage() {
               alt=""
               className="w-24 h-24 rounded-full object-cover ring-4 ring-[var(--card-border)]"
             />
-            {/* Real Online/Offline Presence Indicator */}
+
             <span
-              className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ring-2 ring-[var(--bg)] transition-colors ${userIsOnline
+              className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ring-2 ring-[var(--bg)] transition-colors ${
+                userIsOnline
                   ? 'bg-[var(--accent)] shadow-[0_0_8px_rgba(0,175,160,0.8)] animate-pulse'
                   : 'bg-[#8FA6B0] opacity-60'
-                }`}
+              }`}
               title={userIsOnline ? 'Active now' : 'Offline'}
             />
           </div>
@@ -467,7 +594,10 @@ export default function ProfilePage() {
           <h3 className="font-display font-extrabold text-xl md:text-2xl mt-3 text-[var(--text-main)] tracking-tight">
             {profile.display_name}
           </h3>
-          <p className="text-sub text-xs mt-0.5 font-display">@{profile.username}</p>
+
+          <p className="text-sub text-xs mt-0.5 font-display">
+            @{profile.username}
+          </p>
 
           {/* Badges */}
           <div className="flex items-center gap-2 mt-2.5 flex-wrap justify-center">
@@ -477,15 +607,20 @@ export default function ProfilePage() {
             </span>
 
             <span
-              className={`text-[11px] font-display px-3 py-1 rounded-full flex items-center gap-1.5 font-medium ${userIsOnline
+              className={`text-[11px] font-display px-3 py-1 rounded-full flex items-center gap-1.5 font-medium ${
+                userIsOnline
                   ? 'accent-soft-bg text-[var(--accent)] border border-[var(--accent)]/30'
                   : 'field text-sub'
-                }`}
+              }`}
             >
               <span
-                className={`w-1.5 h-1.5 rounded-full ${userIsOnline ? 'bg-[var(--accent)]' : 'bg-[#8FA6B0]'
-                  }`}
+                className={`w-1.5 h-1.5 rounded-full ${
+                  userIsOnline
+                    ? 'bg-[var(--accent)]'
+                    : 'bg-[#8FA6B0]'
+                }`}
               />
+
               <span>{userIsOnline ? 'Active Now' : 'Offline'}</span>
             </span>
           </div>
@@ -497,34 +632,54 @@ export default function ProfilePage() {
               : 'Bio is hidden. Connect to view full profile.'}
           </p>
 
-          {/* Friend action button if not own profile */}
+          {/* Friend + Message actions */}
           {!isOwnProfile && (
-            <div className="mt-4">
-              <FriendButton profileId={profile.id} currentUserId={currentUserId} />
+            <div className="mt-4 flex items-center gap-2">
+              <FriendButton
+                profileId={profile.id}
+                currentUserId={currentUserId}
+              />
+
+              {isFriend && (
+                <button
+                  onClick={() => navigate(`/chat/${profile.id}`)}
+                  className="field h-9 px-4 rounded-full flex items-center gap-1.5 text-xs font-bold font-display text-[var(--text-main)] hover:border-[var(--accent)] scale-tap transition cursor-pointer"
+                  aria-label={`Message ${profile.display_name}`}
+                >
+                  <MessageSquare size={14} />
+                  <span>Message</span>
+                </button>
+              )}
             </div>
           )}
 
+          {/* Stats */}
           <div className="flex gap-10 mt-6 text-center border border-[var(--card-border)] py-3.5 px-8 rounded-2xl glass shadow-glass">
             <div>
               <p className="font-display font-bold text-base text-[var(--text-main)]">
                 {formatCount(postCount)}
               </p>
+
               <p className="text-sub text-[11px] uppercase tracking-wider font-display">
                 {t('postsLabel')}
               </p>
             </div>
+
             <div>
               <p className="font-display font-bold text-base text-[var(--text-main)]">
                 {formatCount(friendCount)}
               </p>
+
               <p className="text-sub text-[11px] uppercase tracking-wider font-display">
                 {t('friendsLabel')}
               </p>
             </div>
+
             <div>
               <p className="font-display font-bold text-base text-[var(--text-main)]">
                 {isOwnProfile ? '—' : mutualFriendCount}
               </p>
+
               <p className="text-sub text-[11px] uppercase tracking-wider font-display">
                 Mutual
               </p>
@@ -533,14 +688,17 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Posts Grid */}
-        {isFriend ? (
+        {isFriend || isOwnProfile ? (
           <div className="mt-7">
             {posts.length === 0 ? (
               <div className="text-center text-sub text-xs py-12 glass rounded-3xl border border-[var(--card-border)]">
                 <div className="w-10 h-10 rounded-2xl bg-[var(--card-border)]/40 flex items-center justify-center mx-auto mb-3">
                   <i className="fa-regular fa-images text-xl opacity-60" />
                 </div>
-                <p className="font-medium">Nothing shared yet in this circle.</p>
+
+                <p className="font-medium">
+                  Nothing shared yet in this circle.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -559,18 +717,24 @@ export default function ProfilePage() {
                       />
                     ) : (
                       <div className="w-full h-full p-3 flex items-center justify-center text-xs text-[var(--text-main)] text-center leading-relaxed bg-[var(--card-bg)] font-medium">
-                        <span className="line-clamp-4">{p.content}</span>
+                        <span className="line-clamp-4">
+                          {p.content}
+                        </span>
                       </div>
                     )}
-                    {/* Hover Overlay with Like Count */}
+
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 gap-3 text-white">
                       <span className="flex items-center gap-1.5 text-xs font-bold font-display">
                         <Heart size={14} className="fill-current" />
                         <span>{formatCount(p.like_count || 0)}</span>
                       </span>
+
                       {p.comment_count > 0 && (
                         <span className="flex items-center gap-1.5 text-xs font-bold font-display">
-                          <MessageSquare size={14} className="fill-current" />
+                          <MessageSquare
+                            size={14}
+                            className="fill-current"
+                          />
                           <span>{formatCount(p.comment_count)}</span>
                         </span>
                       )}
@@ -583,28 +747,34 @@ export default function ProfilePage() {
         ) : (
           <div className="mt-8 text-center p-8 glass rounded-3xl border border-[var(--card-border)]">
             <i className="fa-solid fa-lock text-2xl text-sub mb-2" />
+
             <h4 className="font-display font-bold text-sm text-[var(--text-main)]">
               Posts are Private
             </h4>
+
             <p className="text-xs text-sub mt-1 max-w-xs mx-auto font-body">
-              Become accepted friends to see @{profile.username}&apos;s photos and thoughts.
+              Become accepted friends to see @{profile.username}&apos;s
+              photos and thoughts.
             </p>
           </div>
         )}
       </main>
 
-      {/* ============ MODAL: POST DETAIL VIEW ============ */}
+      {/* POST DETAIL MODAL */}
       {selectedPost && (
         <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4">
           <div
             className="modal-backdrop absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setSelectedPost(null)}
           />
+
           <div className="modal-panel relative glass w-full md:max-w-xl max-h-[90vh] rounded-t-3xl md:rounded-3xl p-0 z-10 flex flex-col overflow-hidden border border-[var(--card-border)] shadow-2xl">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--card-border)] bg-[var(--card-bg)]">
               <div className="flex items-center gap-2.5">
-                <Link to={`/${selectedPost.author?.username || selectedPost.author?.id}`}>
+                <Link
+                  to={`/${selectedPost.author?.username || selectedPost.author?.id}`}
+                >
                   <img
                     src={
                       selectedPost.author?.avatar_url ||
@@ -616,6 +786,7 @@ export default function ProfilePage() {
                     className="w-8 h-8 rounded-full object-cover ring-2 ring-[var(--card-border)]"
                   />
                 </Link>
+
                 <div className="leading-tight">
                   <Link
                     to={`/${selectedPost.author?.username || selectedPost.author?.id}`}
@@ -623,11 +794,14 @@ export default function ProfilePage() {
                   >
                     {selectedPost.author?.display_name || 'User'}
                   </Link>
+
                   <p className="text-[10px] text-sub font-display">
-                    @{selectedPost.author?.username} · {formatRelativeTime(selectedPost.created_at)}
+                    @{selectedPost.author?.username} ·{' '}
+                    {formatRelativeTime(selectedPost.created_at)}
                   </p>
                 </div>
               </div>
+
               <button
                 onClick={() => setSelectedPost(null)}
                 className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap hover:border-[var(--accent)] cursor-pointer"
@@ -637,7 +811,7 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {/* Modal Body: Scrollable */}
+            {/* Modal Body */}
             <div className="flex-1 overflow-y-auto">
               {selectedPost.image_url && (
                 <div className="bg-[var(--card-border)]/30 flex items-center justify-center max-h-96 overflow-hidden">
@@ -658,10 +832,11 @@ export default function ProfilePage() {
                   >
                     @{selectedPost.author?.username}
                   </Link>
+
                   {selectedPost.content}
                 </p>
 
-                {/* Actions & Likes */}
+                {/* Actions */}
                 <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[var(--card-border)]/60">
                   <button
                     onClick={toggleDetailLike}
@@ -675,23 +850,31 @@ export default function ProfilePage() {
                           : 'text-sub'
                       }
                     />
-                    <span>{formatCount(selectedPostLikeCount)} likes</span>
+
+                    <span>
+                      {formatCount(selectedPostLikeCount)} likes
+                    </span>
                   </button>
+
                   <span className="flex items-center gap-1.5 text-xs font-medium text-sub">
                     <MessageSquare size={16} />
-                    <span>{selectedPostComments.length} comments</span>
+                    <span>
+                      {selectedPostComments.length} comments
+                    </span>
                   </span>
                 </div>
               </div>
 
-              {/* Comments list */}
+              {/* Comments */}
               <div className="p-5 space-y-3">
                 <h4 className="text-xs font-bold font-display uppercase tracking-wider text-sub">
                   Comments
                 </h4>
+
                 {loadingComments ? (
                   <div className="py-6 text-center text-xs text-sub">
-                    <i className="fa-solid fa-circle-notch fa-spin mr-1.5" /> Loading replies...
+                    <i className="fa-solid fa-circle-notch fa-spin mr-1.5" />
+                    Loading replies...
                   </div>
                 ) : selectedPostComments.length === 0 ? (
                   <p className="text-xs text-sub text-center py-4">
@@ -699,8 +882,13 @@ export default function ProfilePage() {
                   </p>
                 ) : (
                   selectedPostComments.map((c) => (
-                    <div key={c.id} className="flex items-start gap-2.5 text-xs">
-                      <Link to={`/${c.user?.username || c.user?.id}`}>
+                    <div
+                      key={c.id}
+                      className="flex items-start gap-2.5 text-xs"
+                    >
+                      <Link
+                        to={`/${c.user?.username || c.user?.id}`}
+                      >
                         <img
                           src={
                             c.user?.avatar_url ||
@@ -712,6 +900,7 @@ export default function ProfilePage() {
                           className="w-7 h-7 rounded-full object-cover mt-0.5"
                         />
                       </Link>
+
                       <div className="flex-1 field rounded-2xl p-2.5">
                         <div className="flex items-baseline justify-between mb-0.5">
                           <Link
@@ -720,11 +909,15 @@ export default function ProfilePage() {
                           >
                             @{c.user?.username || 'user'}
                           </Link>
+
                           <span className="text-[10px] text-sub">
                             {formatRelativeTime(c.created_at)}
                           </span>
                         </div>
-                        <p className="text-sub leading-normal">{c.content}</p>
+
+                        <p className="text-sub leading-normal">
+                          {c.content}
+                        </p>
                       </div>
                     </div>
                   ))
@@ -744,31 +937,37 @@ export default function ProfilePage() {
                 placeholder="Add a comment..."
                 className="field flex-1 rounded-full px-4 py-2.5 text-xs outline-none focus:border-[var(--accent)]"
               />
+
               <button
                 type="submit"
                 disabled={!commentInput.trim() || submittingComment}
                 className="accent-bg text-white dark:text-[#070D0C] px-4 py-2.5 rounded-full text-xs font-bold font-display scale-tap disabled:opacity-50 cursor-pointer flex items-center gap-1"
               >
                 <Send size={13} />
-                <span>{submittingComment ? '...' : 'Send'}</span>
+
+                <span>
+                  {submittingComment ? '...' : 'Send'}
+                </span>
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* ============ MODAL: EDIT BIO ============ */}
+      {/* EDIT PROFILE MODAL */}
       {showEditBio && (
         <div className="fixed inset-0 z-[90] flex items-end md:items-center justify-center p-0 md:p-4">
           <div
             className="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowEditBio(false)}
           />
+
           <div className="modal-panel relative glass w-full md:w-96 rounded-t-3xl md:rounded-3xl p-5 z-10 border border-[var(--card-border)] shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display font-bold text-lg text-[var(--text-main)]">
                 Edit Profile
               </h3>
+
               <button
                 onClick={() => setShowEditBio(false)}
                 className="w-8 h-8 rounded-full field flex items-center justify-center scale-tap hover:border-[var(--accent)] cursor-pointer"
@@ -778,10 +977,12 @@ export default function ProfilePage() {
             </div>
 
             <form onSubmit={handleSaveBio} className="space-y-4">
+              {/* Profile Picture */}
               <div>
                 <span className="mb-2 block text-xs font-display font-semibold text-[var(--text-main)]">
                   Profile Picture
                 </span>
+
                 <div className="flex items-center gap-3 rounded-2xl field p-3">
                   <img
                     src={
@@ -794,10 +995,17 @@ export default function ProfilePage() {
                     alt="Profile preview"
                     className="h-14 w-14 rounded-full object-cover ring-2 ring-[var(--card-border)]"
                   />
+
                   <div className="min-w-0 flex-1">
                     <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full accent-bg px-3 text-xs font-bold font-display text-white dark:text-[#070D0C] hover:opacity-90 scale-tap">
                       <Image size={13} />
-                      <span>{avatarFile ? 'Replace picture' : 'Choose picture'}</span>
+
+                      <span>
+                        {avatarFile
+                          ? 'Replace picture'
+                          : 'Choose picture'}
+                      </span>
+
                       <input
                         type="file"
                         accept="image/*"
@@ -805,8 +1013,12 @@ export default function ProfilePage() {
                         className="sr-only"
                       />
                     </label>
-                    <p className="mt-1 text-[10px] text-sub">Device gallery or camera</p>
+
+                    <p className="mt-1 text-[10px] text-sub">
+                      Device gallery or camera
+                    </p>
                   </div>
+
                   {avatarFile && (
                     <button
                       type="button"
@@ -817,8 +1029,10 @@ export default function ProfilePage() {
                       <X size={14} />
                     </button>
                   )}
+
                   <Camera size={16} className="text-sub" />
                 </div>
+
                 {avatarError && (
                   <p
                     role="alert"
@@ -829,10 +1043,12 @@ export default function ProfilePage() {
                 )}
               </div>
 
+              {/* Bio */}
               <div>
                 <label className="block text-xs font-display font-semibold text-[var(--text-main)] mb-1.5">
                   Bio
                 </label>
+
                 <textarea
                   value={bioInput}
                   onChange={(e) => setBioInput(e.target.value)}
@@ -843,6 +1059,7 @@ export default function ProfilePage() {
                 />
               </div>
 
+              {/* Buttons */}
               <div className="flex gap-2 justify-end pt-1">
                 <button
                   type="button"
@@ -851,6 +1068,7 @@ export default function ProfilePage() {
                 >
                   {t('cancel')}
                 </button>
+
                 <button
                   type="submit"
                   disabled={savingBio}
@@ -859,6 +1077,7 @@ export default function ProfilePage() {
                   {savingBio && (
                     <i className="fa-solid fa-circle-notch fa-spin mr-1" />
                   )}
+
                   <span>{t('save')}</span>
                 </button>
               </div>
