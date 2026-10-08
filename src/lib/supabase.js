@@ -32,5 +32,25 @@ if (!supabaseKey) {
 export const supabase =
   createClient(
     supabaseUrl,
-    supabaseKey
+    supabaseKey,
+    {
+      realtime: {
+        heartbeatIntervalMs: 15000,
+        timeout: 20000,
+      },
+    }
   )
+
+export async function teardownChannel(channel) {
+  if (!channel) return
+
+  try {
+    await supabase.removeChannel(channel)
+  } catch {
+    try {
+      channel.unsubscribe()
+    } catch {
+      // Channel already closed.
+    }
+  }
+}

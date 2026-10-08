@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, teardownChannel } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI } from '@/contexts/UIContext'
 
@@ -52,7 +52,7 @@ export function PresenceProvider({ children }) {
         channelRef.current = null
 
         oldChannel.untrack().catch(() => {})
-        supabase.removeChannel(oldChannel)
+        void teardownChannel(oldChannel)
       }
 
       return undefined
@@ -69,7 +69,7 @@ export function PresenceProvider({ children }) {
       subscribedRef.current = false
 
       oldChannel.untrack().catch(() => {})
-      supabase.removeChannel(oldChannel)
+      void teardownChannel(oldChannel)
     }
 
     setOnlineUserIds(new Set())
@@ -191,7 +191,7 @@ export function PresenceProvider({ children }) {
         channelRef.current = null
       }
 
-      supabase.removeChannel(channel)
+      void teardownChannel(channel)
     }
   }, [user?.id])
 

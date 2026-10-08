@@ -31,6 +31,7 @@ export default function ProfilePage() {
   const [mutualFriendCount, setMutualFriendCount] = useState(0)
   const [postCount, setPostCount] = useState(0)
   const [posts, setPosts] = useState([])
+  const [activeTab, setActiveTab] = useState('posts')
 
   // Post detail modal state
   const [selectedPost, setSelectedPost] = useState(null)
@@ -201,20 +202,45 @@ export default function ProfilePage() {
       setPostCount(pCount || 0)
 
       // Posts visible to friends only
-      if (isFr) {
-        const { data: userPosts } = await supabase
+      if (isFr || isOwn) {
+        let query = supabase
           .from('posts')
           .select(
-            'id, content, image_url, author_id, created_at, author:author_id(id, username, display_name, avatar_url), likes:likes(count), comments:comments(count)'
+            'id, content, image_url, video_url, author_id, is_archived, created_at'
           )
           .eq('author_id', targetId)
           .order('created_at', { ascending: false })
-          .limit(30)
+          .limit(40)
+
+        if (!isOwn) {
+          query = query.eq('is_archived', false)
+        }
+
+        const { data: userPosts } = await query
+
+        const postIds = (userPosts || []).map((p) => p.id)
+        let pollsMap = new Map()
+        if (postIds.length > 0) {
+          const { data: pollsData } = await supabase
+            .from('polls')
+            .select('id, post_id, question, options')
+            .in('post_id', postIds)
+          if (pollsData) {
+            pollsMap = new Map(pollsData.map((pol) => [pol.post_id, pol]))
+          }
+        }
 
         const formatted = (userPosts || []).map((p) => ({
           ...p,
-          like_count: p.likes?.[0]?.count || 0,
-          comment_count: p.comments?.[0]?.count || 0,
+          poll: pollsMap.get(p.id) || null,
+          author: {
+            id: fullProfile.id,
+            username: fullProfile.username,
+            display_name: fullProfile.display_name,
+            avatar_url: fullProfile.avatar_url,
+          },
+          like_count: 0,
+          comment_count: 0,
         }))
 
         setPosts(formatted)
@@ -687,62 +713,123 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Profile Posts Grid */}
+        {/* Profile Posts Grid & Tabs */}
         {isFriend || isOwnProfile ? (
           <div className="mt-7">
-            {posts.length === 0 ? (
-              <div className="text-center text-sub text-xs py-12 glass rounded-3xl border border-[var(--card-border)]">
-                <div className="w-10 h-10 rounded-2xl bg-[var(--card-border)]/40 flex items-center justify-center mx-auto mb-3">
-                  <i className="fa-regular fa-images text-xl opacity-60" />
-                </div>
+            {/* Tabs */}
+            <div className="flex items-center justify-center gap-2 mb-6 border-b border-[var(--card-border)] pb-3">
+              <button
+                onClick={() => setActiveTab('posts')}
+                className={`px-4 py-2 rounded-full text-xs font-display font-bold transition scale-tap cursor-pointer ${
+                  activeTab === 'posts'
+                    ? 'accent-bg text-white dark:text-[#070D0C]'
+                    : 'field text-sub hover:text-[var(--text-main)]'
+                }`}
+              >
+                <span>Posts</span>
+              </button>
 
-                <p className="font-medium">
-                  Nothing shared yet in this circle.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {posts.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => openPostDetail(p)}
-                    className="relative rounded-2xl overflow-hidden aspect-square group bg-[var(--card-bg)] border border-[var(--card-border)] transition-transform scale-tap cursor-pointer text-left focus:outline-none"
-                  >
-                    {p.image_url ? (
-                      <img
-                        src={p.image_url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full p-3 flex items-center justify-center text-xs text-[var(--text-main)] text-center leading-relaxed bg-[var(--card-bg)] font-medium">
-                        <span className="line-clamp-4">
-                          {p.content}
-                        </span>
-                      </div>
-                    )}
+              <button
+                onClick={() => setActiveTab('polls')}
+                className={`px-4 py-2 rounded-full text-xs font-display font-bold transition scale-tap cursor-pointer ${
+                  activeTab === 'polls'
+                    ? 'accent-bg text-white dark:text-[#070D0C]'
+                    : 'field text-sub hover:text-[var(--text-main)]'
+                }`}
+              >
+                <span>Polls</span>
+              </button>
 
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 gap-3 text-white">
-                      <span className="flex items-center gap-1.5 text-xs font-bold font-display">
-                        <Heart size={14} className="fill-current" />
-                        <span>{formatCount(p.like_count || 0)}</span>
-                      </span>
+              {isOwnProfile && (
+                <button
+                  onClick={() => setActiveTab('archived')}
+                  className={`px-4 py-2 rounded-full text-xs font-display font-bold transition scale-tap cursor-pointer ${
+                    activeTab === 'archived'
+                      ? 'accent-bg text-white dark:text-[#070D0C]'
+                      : 'field text-sub hover:text-[var(--text-main)]'
+                  }`}
+                >
+                  <span>Archived</span>
+                </button>
+              )}
+            </div>
 
-                      {p.comment_count > 0 && (
-                        <span className="flex items-center gap-1.5 text-xs font-bold font-display">
-                          <MessageSquare
-                            size={14}
-                            className="fill-current"
-                          />
-                          <span>{formatCount(p.comment_count)}</span>
-                        </span>
-                      )}
+            {(() => {
+              const displayedPosts = posts.filter((p) => {
+                if (activeTab === 'polls') return !!p.poll
+                if (activeTab === 'archived') return !!p.is_archived
+                return !p.is_archived
+              })
+
+              if (displayedPosts.length === 0) {
+                return (
+                  <div className="text-center text-sub text-xs py-12 glass rounded-3xl border border-[var(--card-border)]">
+                    <div className="w-10 h-10 rounded-2xl bg-[var(--card-border)]/40 flex items-center justify-center mx-auto mb-3">
+                      <i className="fa-regular fa-images text-xl opacity-60" />
                     </div>
-                  </button>
-                ))}
-              </div>
-            )}
+
+                    <p className="font-medium">
+                      {activeTab === 'polls'
+                        ? 'No polls shared yet.'
+                        : activeTab === 'archived'
+                        ? 'No archived posts.'
+                        : 'Nothing shared yet in this circle.'}
+                    </p>
+                  </div>
+                )
+              }
+
+              return (
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {displayedPosts.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => openPostDetail(p)}
+                      className="relative rounded-2xl overflow-hidden aspect-square group bg-[var(--card-bg)] border border-[var(--card-border)] transition-transform scale-tap cursor-pointer text-left focus:outline-none"
+                    >
+                      {p.image_url ? (
+                        <img
+                          src={p.image_url}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : p.poll ? (
+                        <div className="w-full h-full p-3 flex flex-col items-center justify-center text-xs text-[var(--text-main)] text-center leading-relaxed bg-[var(--card-bg)] font-medium">
+                          <i className="fa-solid fa-square-poll-vertical text-lg text-[var(--accent)] mb-1" />
+                          <span className="line-clamp-2">
+                            {p.poll.question}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full p-3 flex items-center justify-center text-xs text-[var(--text-main)] text-center leading-relaxed bg-[var(--card-bg)] font-medium">
+                          <span className="line-clamp-4">
+                            {p.content}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 gap-3 text-white">
+                        <span className="flex items-center gap-1.5 text-xs font-bold font-display">
+                          <Heart size={14} className="fill-current" />
+                          <span>{formatCount(p.like_count || 0)}</span>
+                        </span>
+
+                        {p.comment_count > 0 && (
+                          <span className="flex items-center gap-1.5 text-xs font-bold font-display">
+                            <MessageSquare
+                              size={14}
+                              className="fill-current"
+                            />
+                            <span>{formatCount(p.comment_count)}</span>
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         ) : (
           <div className="mt-8 text-center p-8 glass rounded-3xl border border-[var(--card-border)]">

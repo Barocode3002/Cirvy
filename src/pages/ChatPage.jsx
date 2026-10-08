@@ -22,7 +22,7 @@ import {
   UserX,
 } from 'lucide-react'
 
-import { supabase } from '@/lib/supabase'
+import { supabase, teardownChannel } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI } from '@/contexts/UIContext'
 import { usePresence } from '@/contexts/PresenceContext'
@@ -467,8 +467,9 @@ function ChatSkeleton() {
 // Main ChatPage
 // -----------------------------------------------------------------------------
 
-export default function ChatPage() {
-  const { friendId } = useParams()
+export default function ChatPage({ isSplitView = false, friendId: propFriendId }) {
+  const { friendId: paramFriendId, chatId } = useParams()
+  const friendId = propFriendId || paramFriendId || chatId
 
   const { user } = useAuth()
   const { t, showToast } = useUI()
@@ -1138,21 +1139,12 @@ export default function ChatPage() {
     return () => {
       active = false
 
-      if (messageChannel) {
-        supabase.removeChannel(
-          messageChannel
-        )
-
-        messageChannel = null
-      }
-
-      if (keyChannel) {
-        supabase.removeChannel(
-          keyChannel
-        )
-
-        keyChannel = null
-      }
+      const msgCh = messageChannel
+      const kCh = keyChannel
+      messageChannel = null
+      keyChannel = null
+      void teardownChannel(msgCh)
+      void teardownChannel(kCh)
     }
   }, [
     friendId,
@@ -1587,46 +1579,45 @@ export default function ChatPage() {
   // ---------------------------------------------------------------------------
 
   if (isFriend === false) {
-    return (
-      <AppShell>
-        <main className="min-w-0 min-h-[calc(100vh-6rem)] flex items-center justify-center px-4">
-          <div className="glass rounded-3xl p-8 border border-[var(--card-border)] max-w-md w-full text-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
-              <UserX size={25} />
-            </div>
-
-            <div>
-              <h2 className="font-display font-bold text-lg text-[var(--text-main)]">
-                Friends-Only Messaging
-              </h2>
-
-              <p className="text-xs text-sub leading-relaxed mt-2">
-                Cirvy chats are strictly private.
-                You can only exchange end-to-end
-                encrypted messages with accepted
-                circle friends.
-              </p>
-            </div>
-
-            <Link
-              to="/messages"
-              className="inline-flex items-center justify-center accent-bg text-white dark:text-[#070D0C] font-display font-bold text-xs px-6 py-3 rounded-full transition-transform active:scale-95"
-            >
-              Back to Messages
-            </Link>
+    const notFriendsContent = (
+      <main className="min-w-0 min-h-[calc(100vh-6rem)] flex items-center justify-center px-4">
+        <div className="glass rounded-3xl p-8 border border-[var(--card-border)] max-w-md w-full text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
+            <UserX size={25} />
           </div>
-        </main>
-      </AppShell>
+
+          <div>
+            <h2 className="font-display font-bold text-lg text-[var(--text-main)]">
+              Friends-Only Messaging
+            </h2>
+
+            <p className="text-xs text-sub leading-relaxed mt-2">
+              Cirvy chats are strictly private.
+              You can only exchange end-to-end
+              encrypted messages with accepted
+              circle friends.
+            </p>
+          </div>
+
+          <Link
+            to="/messages"
+            className="inline-flex items-center justify-center accent-bg text-white dark:text-[#070D0C] font-display font-bold text-xs px-6 py-3 rounded-full transition-transform active:scale-95"
+          >
+            Back to Messages
+          </Link>
+        </div>
+      </main>
     )
+
+    return isSplitView ? notFriendsContent : <AppShell>{notFriendsContent}</AppShell>
   }
 
   // ---------------------------------------------------------------------------
   // Main UI
   // ---------------------------------------------------------------------------
 
-  return (
-    <AppShell>
-      <main className="min-w-0 max-w-3xl mx-auto flex flex-col h-[calc(100dvh-5rem)] md:h-[calc(100vh-4rem)]">
+  const chatContent = (
+    <main className="min-w-0 max-w-3xl mx-auto flex flex-col h-[calc(100dvh-5rem)] md:h-[calc(100vh-4rem)]">
 
         {/* ------------------------------------------------------------------ */}
         {/* Header */}
@@ -2013,6 +2004,7 @@ export default function ChatPage() {
           )}
         </footer>
       </main>
-    </AppShell>
   )
+
+  return isSplitView ? chatContent : <AppShell>{chatContent}</AppShell>
 }

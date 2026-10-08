@@ -11,7 +11,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 
-import { supabase } from '@/lib/supabase'
+import { supabase, teardownChannel } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI } from '@/contexts/UIContext'
 import AppShell from '@/components/AppShell'
@@ -195,9 +195,9 @@ export default function NotificationsPage() {
     return () => {
       active = false
 
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
+      const ch = channel
+      channel = null
+      void teardownChannel(ch)
     }
   }, [user?.id])
 

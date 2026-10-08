@@ -7,7 +7,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 
-import { supabase } from '@/lib/supabase'
+import { supabase, teardownChannel } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   ensureUserKeys,
@@ -16,7 +16,7 @@ import {
 } from '@/lib/e2ee'
 import AppShell from '@/components/AppShell'
 
-export default function MessagesListPage() {
+export default function MessagesListPage({ isEmbedded = false, selectedChatId = null, onSelectChat = null }) {
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -302,121 +302,58 @@ export default function MessagesListPage() {
         if (mounted) {
           loadConversations()
         }
-      }, 3000)
+      }, 5000)
     }
 
-    const setupRealtime = async () => {
-      channel = supabase.channel(
-        `messages-list:${userId}`
-      )
+    loadConversations().then(() => {
+      if (!mounted) return
 
-      /*
-       * IMPORTANT:
-       * Every postgres_changes listener is attached
-       * BEFORE subscribe().
-       */
-
-      channel.on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `sender_id=eq.${userId}`,
-        },
-        (payload) => {
-          if (!mounted) return
-
-          console.log(
-            '📤 [CIRVY MESSAGES LIST REALTIME] New sent message:',
-            payload?.new
+      try {
+        channel = supabase
+          .channel(`public:messages:list:${userId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'messages',
+              filter: `sender_id=eq.${userId}`,
+            },
+            scheduleReload
           )
-
-          scheduleReload()
-        }
-      )
-
-      channel.on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `receiver_id=eq.${userId}`,
-        },
-        (payload) => {
-          if (!mounted) return
-
-          console.log(
-            '📩 [CIRVY MESSAGES LIST REALTIME] New received message:',
-            payload?.new
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'messages',
+              filter: `receiver_id=eq.${userId}`,
+            },
+            scheduleReload
           )
-
-          scheduleReload()
-        }
-      )
-
-      channel.subscribe((status, error) => {
-        if (!mounted) return
-
-        console.log(
-          '[CIRVY MESSAGES LIST REALTIME]',
-          status,
-          error || ''
-        )
-
-        if (status === 'SUBSCRIBED') {
-          console.log(
-            '✅ CIRVY messages list realtime connected'
-          )
-
-          if (pollingInterval) {
-            clearInterval(pollingInterval)
-            pollingInterval = null
-          }
-
-          return
-        }
-
-        if (
-          status === 'CHANNEL_ERROR' ||
-          status === 'TIMED_OUT' ||
-          status === 'CLOSED'
-        ) {
-          console.error(
-            '❌ [CIRVY MESSAGES LIST REALTIME] Connection problem:',
-            status,
-            error || ''
-          )
-
-          startFallbackPolling()
-        }
-      })
-    }
-
-    loadConversations()
-    setupRealtime()
+          .subscribe((status, err) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
+              startFallbackPolling()
+            }
+          })
+      } catch {
+        startFallbackPolling()
+      }
+    })
 
     return () => {
       mounted = false
 
       if (reloadTimer) {
         clearTimeout(reloadTimer)
-        reloadTimer = null
       }
 
       if (pollingInterval) {
         clearInterval(pollingInterval)
-        pollingInterval = null
       }
 
       if (channel) {
-        console.log(
-          '[CIRVY MESSAGES LIST] Cleaning up realtime channel'
-        )
-
-        supabase.removeChannel(channel)
-        channel = null
+        void teardownChannel(channel)
       }
     }
   }, [userId, loadConversations])
@@ -444,7 +381,11 @@ export default function MessagesListPage() {
     })
 
   const openChat = (partnerId) => {
-    navigate(`/chat/${partnerId}`)
+    if (onSelectChat) {
+      onSelectChat(partnerId)
+    } else {
+      navigate(`/messages/${partnerId}`)
+    }
   }
 
   const formatTime = (date) => {
@@ -480,160 +421,170 @@ export default function MessagesListPage() {
     return null
   }
 
-  return (
-    <AppShell>
-      <div className="min-w-0 w-full">
-        <div className="mx-auto w-full max-w-2xl px-4 py-6">
+  const content = (
+    <div className="min-w-0 w-full">
+      <div className="mx-auto w-full max-w-2xl px-4 py-6">
 
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-display font-extrabold tracking-tight text-[var(--text-main)]">
-                Messages
-              </h1>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-display font-extrabold tracking-tight text-[var(--text-main)]">
+              Messages
+            </h1>
 
-              <p className="mt-1 text-sm opacity-60">
-                Your conversations
+            <p className="mt-1 text-sm opacity-60">
+              Your conversations
+            </p>
+          </div>
+
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+            <MessageCircle size={21} />
+          </div>
+        </div>
+
+        <div className="relative mb-5">
+          <Search
+            size={18}
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 opacity-50"
+          />
+
+          <input
+            type="text"
+            value={search}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
+            placeholder="Search conversations..."
+            className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 outline-none transition focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:focus:border-slate-500"
+          />
+        </div>
+
+        {loading && (
+          <div className="flex items-center justify-center py-16">
+            <Loader2
+              size={25}
+              className="animate-spin opacity-60"
+            />
+          </div>
+        )}
+
+        {!loading &&
+          filteredConversations.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                <MessageCircle
+                  size={28}
+                  className="opacity-50"
+                />
+              </div>
+
+              <h2 className="text-lg font-semibold">
+                {search
+                  ? 'No conversations found'
+                  : 'No messages yet'}
+              </h2>
+
+              <p className="mt-1 max-w-xs text-sm opacity-60">
+                {search
+                  ? 'Try another name or username.'
+                  : 'Start a conversation with one of your friends.'}
               </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-              <MessageCircle size={21} />
-            </div>
-          </div>
-
-          <div className="relative mb-5">
-            <Search
-              size={18}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 opacity-50"
-            />
-
-            <input
-              type="text"
-              value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
-              placeholder="Search conversations..."
-              className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 outline-none transition focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:focus:border-slate-500"
-            />
-          </div>
-
-          {loading && (
-            <div className="flex items-center justify-center py-16">
-              <Loader2
-                size={25}
-                className="animate-spin opacity-60"
-              />
             </div>
           )}
 
-          {!loading &&
-            filteredConversations.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-                  <MessageCircle
-                    size={28}
-                    className="opacity-50"
-                  />
-                </div>
+        {!loading &&
+          filteredConversations.length > 0 && (
+            <div className="space-y-2">
+              {filteredConversations.map(
+                (conversation) => {
+                  const profile =
+                    conversation.profile
 
-                <h2 className="text-lg font-semibold">
-                  {search
-                    ? 'No conversations found'
-                    : 'No messages yet'}
-                </h2>
+                  const displayName =
+                    profile?.display_name ||
+                    profile?.username ||
+                    'User'
 
-                <p className="mt-1 max-w-xs text-sm opacity-60">
-                  {search
-                    ? 'Try another name or username.'
-                    : 'Start a conversation with one of your friends.'}
-                </p>
-              </div>
-            )}
+                  const username =
+                    profile?.username
+                      ? `@${profile.username}`
+                      : ''
 
-          {!loading &&
-            filteredConversations.length > 0 && (
-              <div className="space-y-2">
-                {filteredConversations.map(
-                  (conversation) => {
-                    const profile =
-                      conversation.profile
+                  const isActive = selectedChatId === conversation.partnerId
 
-                    const displayName =
-                      profile?.display_name ||
-                      profile?.username ||
-                      'User'
+                  return (
+                    <button
+                      key={conversation.partnerId}
+                      type="button"
+                      onClick={() =>
+                        openChat(
+                          conversation.partnerId
+                        )
+                      }
+                      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99] ${
+                        isActive
+                          ? 'border-[var(--accent)] bg-[var(--accent)]/15 dark:bg-[var(--accent)]/20 shadow-sm'
+                          : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="relative shrink-0">
+                        {profile?.avatar_url ? (
+                          <img
+                            src={profile.avatar_url}
+                            alt={displayName}
+                            className="h-14 w-14 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 text-lg font-semibold dark:bg-slate-700">
+                            {displayName
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+                        )}
+                      </div>
 
-                    const username =
-                      profile?.username
-                        ? `@${profile.username}`
-                        : ''
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="truncate font-semibold">
+                              {displayName}
+                            </h3>
 
-                    return (
-                      <button
-                        key={conversation.partnerId}
-                        type="button"
-                        onClick={() =>
-                          openChat(
-                            conversation.partnerId
-                          )
-                        }
-                        className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:bg-slate-50 active:scale-[0.99] dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
-                      >
-                        <div className="relative shrink-0">
-                          {profile?.avatar_url ? (
-                            <img
-                              src={profile.avatar_url}
-                              alt={displayName}
-                              className="h-14 w-14 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 text-lg font-semibold dark:bg-slate-700">
-                              {displayName
-                                .charAt(0)
-                                .toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <h3 className="truncate font-semibold">
-                                {displayName}
-                              </h3>
-
-                              {username && (
-                                <p className="truncate text-xs opacity-50">
-                                  {username}
-                                </p>
-                              )}
-                            </div>
-
-                            <span className="shrink-0 text-xs opacity-50">
-                              {formatTime(
-                                conversation.created_at
-                              )}
-                            </span>
+                            {username && (
+                              <p className="truncate text-xs opacity-50">
+                                {username}
+                              </p>
+                            )}
                           </div>
 
-                          <p className="mt-1 truncate text-sm opacity-60">
-                            {conversation.preview}
-                          </p>
+                          <span className="shrink-0 text-xs opacity-50">
+                            {formatTime(
+                              conversation.created_at
+                            )}
+                          </span>
                         </div>
 
-                        <ChevronRight
-                          size={18}
-                          className="shrink-0 opacity-30"
-                        />
-                      </button>
-                    )
-                  }
-                )}
-              </div>
-            )}
-        </div>
+                        <p className="mt-1 truncate text-sm opacity-60">
+                          {conversation.preview}
+                        </p>
+                      </div>
+
+                      <ChevronRight
+                        size={18}
+                        className="shrink-0 opacity-30"
+                      />
+                    </button>
+                  )
+                }
+              )}
+            </div>
+          )}
       </div>
-    </AppShell>
+    </div>
   )
+
+  if (isEmbedded) {
+    return content
+  }
+
+  return <AppShell>{content}</AppShell>
 }

@@ -41,7 +41,6 @@ export default function FeedPage() {
     // Include the user's own posts
     const authorIds = Array.from(new Set([user.id, ...friendIds]))
 
-    // 1. Fetch posts
     let rawPosts = []
     try {
       const { data: pData, error: pErr } = await supabase
@@ -52,14 +51,7 @@ export default function FeedPage() {
         .limit(50)
 
       if (pErr) {
-        // Fallback without video_url if column does not exist
-        const { data: fallbackPosts } = await supabase
-          .from('posts')
-          .select('id, content, image_url, author_id, created_at')
-          .in('author_id', authorIds)
-          .order('created_at', { ascending: false })
-          .limit(50)
-        rawPosts = fallbackPosts || []
+        rawPosts = []
       } else {
         rawPosts = pData || []
       }

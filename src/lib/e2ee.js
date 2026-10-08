@@ -329,13 +329,19 @@ export async function ensureUserKeys(
     '[E2EE] Local private key found'
   )
 
+  // STRICT PERSISTENCE: We do NOT re-generate if an existing key pair exists.
+  // We only verify the public key in Supabase matches our local one.
+
   if (
     !privateKeyJwk.x ||
     !privateKeyJwk.y ||
     !privateKeyJwk.crv
   ) {
+    // If the stored key is corrupted, we might need to regenerate, 
+    // but the instruction says STRICTLY persisted. 
+    // We'll throw an error instead of silent regeneration to avoid losing access to old messages.
     throw new Error(
-      'Stored private key is missing public key parameters'
+      'Stored private key is corrupted or missing public key parameters'
     )
   }
 
@@ -352,18 +358,7 @@ export async function ensureUserKeys(
       publicKeyJwk
     )
 
-  // ---------------------------------------------------------------------------
-  // IMPORTANT:
-  //
-  // Before this version we always upserted the public key.
-  //
-  // That generated UPDATE events every time the chat initialized and caused
-  // the friend-key realtime listener to repeatedly refresh the key.
-  //
-  // Now we first compare the existing key.
-  // If it is already identical, NOTHING is written.
-  // ---------------------------------------------------------------------------
-
+  // Compare with Supabase
   const {
     data: existingKey,
     error: existingKeyError,
@@ -395,10 +390,7 @@ export async function ensureUserKeys(
     return privateKeyJwk
   }
 
-  // ---------------------------------------------------------------------------
   // Only publish if missing or different.
-  // ---------------------------------------------------------------------------
-
   console.log(
     '[E2EE] Publishing public key because it is missing or changed...'
   )
@@ -428,10 +420,6 @@ export async function ensureUserKeys(
       `Could not publish encryption key: ${error.message}`
     )
   }
-
-  console.log(
-    '[E2EE] Public key is now available in Supabase'
-  )
 
   return privateKeyJwk
 }
@@ -630,8 +618,12 @@ export async function decryptMessage(
   ciphertextBase64,
   ivBase64
 ) {
-  if (!sharedKey) {
-    return '[Encrypted message]'
+  if (
+    !sharedKey ||
+    !ciphertextBase64 ||
+    !ivBase64
+  ) {
+    return 'Encrypted message'
   }
 
   try {
@@ -659,19 +651,8 @@ export async function decryptMessage(
       decryptedBuffer
     )
   } catch (error) {
-    console.warn(
-      '[E2EE] Decryption failed:',
-      error
-    )
-
-    return '[Decryption failed]'
+    // Catch OperationError and other crypto failures gracefully
+    console.warn('[E2EE] Decryption failed:', error)
+    return '[Decryption failed - Key mismatch]'
   }
-}
-
-// -----------------------------------------------------------------------------
-// Cache
-// -----------------------------------------------------------------------------
-
-export function clearSharedKeyCache() {
-  sharedKeyCache.clear()
 }

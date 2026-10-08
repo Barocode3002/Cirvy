@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import SignupPage from '@/pages/SignupPage'
 import LoginPage from '@/pages/LoginPage'
 import FeedPage from '@/pages/FeedPage'
@@ -7,11 +7,16 @@ import ProfilePage from '@/pages/ProfilePage'
 import FriendRequestsPage from '@/pages/FriendRequestsPage'
 import SearchPage from '@/pages/SearchPage'
 import OnboardingPage from '@/pages/OnboardingPage'
-import ChatPage from '@/pages/ChatPage'
-import MessagesListPage from '@/pages/MessagesListPage'
+import MessagesPage from '@/pages/MessagesPage'
 import CreatePostPage from '@/pages/CreatePostPage'
 import NotificationsPage from '@/pages/NotificationsPage'
 import SettingsPage from '@/pages/SettingsPage'
+
+// Redirect /chat/:friendId → /messages/:friendId using the actual param value.
+function ChatRedirect() {
+  const { friendId } = useParams()
+  return <Navigate to={`/messages/${friendId}`} replace />
+}
 
 // --------------------------------------------------------------------------
 // App — the router shell.
@@ -121,7 +126,15 @@ export default function App() {
           path="/messages"
           element={
             <ProtectedRoute>
-              <MessagesListPage />
+              <MessagesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route 
+          path="/messages/:chatId"
+          element={
+            <ProtectedRoute>
+              <MessagesPage />
             </ProtectedRoute>
           }
         />
@@ -129,7 +142,7 @@ export default function App() {
           path="/chat/:friendId"
           element={
             <ProtectedRoute>
-              <ChatPage />
+              <ChatRedirect />
             </ProtectedRoute>
           }
         />

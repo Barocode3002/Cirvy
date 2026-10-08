@@ -9,7 +9,7 @@ import {
   Bell,
 } from 'lucide-react'
 
-import { supabase } from '@/lib/supabase'
+import { supabase, teardownChannel } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import SettingsModal from './SettingsModal'
 
@@ -159,9 +159,9 @@ export default function NavBar() {
     return () => {
       active = false
 
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
+      const ch = channel
+      channel = null
+      void teardownChannel(ch)
     }
   }, [user?.id])
 
