@@ -12,10 +12,10 @@ export default function MessagesPage() {
   const navigate = useNavigate()
 
   return (
-    <AppShell>
-      <div className="flex-1 flex overflow-hidden h-[calc(100dvh-5rem)] md:h-[calc(100vh-4rem)] w-full">
+    <AppShell noPadding>
+      <div className="flex-1 flex overflow-hidden h-[calc(100dvh-5rem)] md:h-screen w-full bg-[var(--bg)]">
         {/* Left Pane: Conversation List */}
-        <div className={`w-full md:w-[380px] shrink-0 border-r border-[var(--card-border)] overflow-y-auto ${activeChatId ? 'hidden md:block' : 'block'}`}>
+        <div className={`w-full md:w-[380px] shrink-0 border-r border-[var(--card-border)] overflow-y-auto bg-[var(--card-bg)] ${activeChatId ? 'hidden md:block' : 'block'}`}>
           <MessagesListPage 
             isEmbedded 
             selectedChatId={activeChatId} 

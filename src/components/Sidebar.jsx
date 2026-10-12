@@ -17,11 +17,11 @@ import {
   Sun,
   LogOut,
 } from 'lucide-react'
+import CirvyLogo from './CirvyLogo'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI } from '@/contexts/UIContext'
 import { usePresence } from '@/contexts/PresenceContext'
 import { supabase } from '@/lib/supabase'
-import CirvyLogo from './CirvyLogo'
 
 function avatarFor(person, fallback = 'User') {
   return (
@@ -59,11 +59,18 @@ export default function Sidebar({ side = 'left' }) {
         setShowMoreMenu(false)
       }
     }
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setShowMoreMenu(false)
+      }
+    }
     if (showMoreMenu) {
       document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleKeyDown)
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [showMoreMenu])
 
@@ -138,7 +145,7 @@ export default function Sidebar({ side = 'left' }) {
   // ================= RIGHT SIDEBAR =================
   if (side === 'right') {
     return (
-      <aside className="hidden w-72 shrink-0 lg:block">
+      <aside className="hidden w-72 shrink-0 py-6 pe-6 lg:block">
         <div className="sticky top-8 rounded-3xl glass p-5 shadow-glass border border-[var(--card-border)]">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -218,122 +225,149 @@ export default function Sidebar({ side = 'left' }) {
     { to: '/create-post', label: 'Create', icon: PlusSquare },
     { to: '/notifications', label: 'Notifications', icon: Bell, badge: unreadCount },
     { to: '/friends', label: 'Friends', icon: Users },
-
   ]
 
+  const labelCls = `overflow-hidden whitespace-nowrap text-sm font-semibold opacity-0 transition-opacity duration-150 group-hover/rail:opacity-100 group-focus-within/rail:opacity-100 ${showMoreMenu ? 'opacity-100' : ''}`
+  const itemCls = (a) => `relative mx-2 flex h-12 items-center gap-4 rounded-2xl px-3.5 transition scale-tap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${a ? 'bg-[var(--accent)]/10 text-[var(--accent)]' : 'text-sub hover:bg-[var(--card-border)]/50 hover:text-[var(--text-main)]'}`
+
   return (
-    <aside className="hidden w-60 shrink-0 md:flex flex-col justify-between h-[calc(100vh-3rem)] sticky top-6">
-      <div className="flex-1 flex flex-col min-h-0">
-        {/* Brand Header */}
-        <Link to="/feed" className="mb-6 flex items-center gap-2 group px-2">
-          <CirvyLogo variant="full" size={26} />
-        </Link>
+    <div className="relative hidden w-[4.5rem] shrink-0 md:block">
+      <aside className={`group/rail fixed start-0 top-0 z-40 flex h-screen flex-col justify-between border-e border-[var(--card-border)] bg-[var(--bg)] py-5 transition-[width,box-shadow] delay-100 duration-200 ease-out ${showMoreMenu ? 'w-[15.5rem] shadow-2xl' : 'w-[4.5rem] hover:w-[15.5rem] hover:shadow-2xl focus-within:w-[15.5rem] focus-within:shadow-2xl'}`}>
+        <div className="overflow-hidden">
+          {/* Top Logo */}
+          <Link to="/feed" aria-label="Cirvy" className="mx-2 mb-5 flex h-12 items-center px-3.5 relative">
+            {/* Collapsed state Icon - Only visible when not expanded */}
+            <div className={`shrink-0 transition-opacity duration-200 ease-out ${showMoreMenu ? 'opacity-0' : 'group-hover/rail:opacity-0 group-focus-within/rail:opacity-0'}`}>
+               <CirvyLogo variant="icon" size={30} />
+            </div>
+            
+            {/* Expanded state Wordmark + Beta - Fixed position overlapping icon */}
+            <div className={`absolute left-3.5 flex items-center transition-all duration-200 ease-out whitespace-nowrap overflow-hidden
+              opacity-0 max-w-0 pointer-events-none translate-x-1
+              group-hover/rail:opacity-100 group-hover/rail:max-w-[12rem] group-hover/rail:pointer-events-auto group-hover/rail:translate-x-0
+              group-focus-within/rail:opacity-100 group-focus-within/rail:max-w-[12rem] group-focus-within/rail:pointer-events-auto group-focus-within/rail:translate-x-0
+              ${showMoreMenu ? 'opacity-100 max-w-[12rem] pointer-events-auto translate-x-0' : ''}`}>
+               <CirvyLogo variant="full" size={26} />
+               <span className="ml-3 rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-medium text-sub flex items-center justify-center leading-none">
+                 Beta v.1
+               </span>
+            </div>
+          </Link>
 
-        {/* Primary Navigation Group */}
-        <nav className="space-y-1">
-          {mainNavItems.map(({ to, label, icon: Icon, badge }) => (
-            <NavLink
-              key={label}
-              to={to}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-2xl px-4 py-2.5 text-xs font-semibold transition scale-tap ${isActive
-                  ? 'accent-bg text-white dark:text-[#070D0C] shadow-sm font-bold'
-                  : 'text-sub hover:text-[var(--text-main)] hover:bg-[var(--card-border)]/40'
-                }`
-              }
-            >
-              <div className="relative">
-                <Icon size={16} />
-              </div>
-              <span className="truncate">{label}</span>
-              {badge > 0 && (
-                <span className="ms-auto rounded-full bg-[var(--accent)] text-white dark:text-[#070D0C] px-1.5 py-0.5 text-[10px] font-bold font-display leading-none">
-                  {badge}
+          {/* Primary Navigation Group */}
+          <nav className="flex flex-col gap-1">
+            {mainNavItems.map(({ to, label, icon: Icon, badge }) => (
+              <NavLink
+                key={label}
+                to={to}
+                aria-label={label}
+                className={({ isActive }) => itemCls(isActive)}
+              >
+                {({ isActive }) => (
+                  <>
+                    <span className="relative flex h-7 w-7 shrink-0 items-center justify-center">
+                      <Icon className="h-7 w-7" strokeWidth={isActive ? 2.4 : 1.8} />
+                      {badge > 0 && (
+                        <span className="absolute -end-2 -top-2 flex h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-[var(--bg)]">
+                          {badge > 99 ? '99+' : badge}
+                        </span>
+                      )}
+                    </span>
+                    <span aria-hidden="true" className={labelCls}>
+                      {label}
+                    </span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+
+        {/* Instagram-Style Bottom Group (Profile & "More" Popover Menu) */}
+        <div ref={moreMenuRef} className="relative flex flex-col gap-1">
+          {/* Profile Link */}
+          <NavLink
+            to={profilePath}
+            aria-label="Profile"
+            className={({ isActive }) => itemCls(isActive)}
+          >
+            {() => (
+              <>
+                <span className="relative flex h-7 w-7 shrink-0 items-center justify-center">
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt=""
+                      className="h-7 w-7 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-7 w-7" />
+                  )}
                 </span>
-              )}
-            </NavLink>
-          ))}
-        </nav>
-      </div>
+                <span aria-hidden="true" className={labelCls}>
+                  Profile
+                </span>
+              </>
+            )}
+          </NavLink>
 
-      {/* Instagram-Style Bottom Group (Profile & "More" Popover Menu) */}
-      <div className="border-t border-[var(--card-border)] pt-3 mt-2 space-y-1 relative" ref={moreMenuRef}>
-        {/* Profile Link */}
-        <NavLink
-          to={profilePath}
-          className={({ isActive }) =>
-            `flex items-center gap-3 rounded-2xl px-4 py-2.5 text-xs font-semibold transition scale-tap ${isActive
-              ? 'accent-bg text-white dark:text-[#070D0C] shadow-sm font-bold'
-              : 'text-sub hover:text-[var(--text-main)] hover:bg-[var(--card-border)]/40'
-            }`
-          }
-        >
-          {profile?.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt=""
-              className="h-4 w-4 rounded-full object-cover ring-1 ring-current"
-            />
-          ) : (
-            <User size={16} />
+          {/* More Popover Button */}
+          <button
+            type="button"
+            onClick={() => setShowMoreMenu((prev) => !prev)}
+            aria-label="More"
+            className={`${itemCls(false)} w-[calc(100%-1rem)] cursor-pointer text-left ${showMoreMenu ? 'bg-[var(--card-border)]/60 text-[var(--text-main)]' : ''}`}
+          >
+            <span className="relative flex h-7 w-7 shrink-0 items-center justify-center">
+              <Menu className="h-7 w-7" />
+            </span>
+            <span aria-hidden="true" className={labelCls}>
+              More
+            </span>
+          </button>
+
+          {/* Floating "More" Menu Popover */}
+          {showMoreMenu && (
+            <div className="absolute bottom-full start-2 mb-2 w-56 glass rounded-3xl p-2 border border-[var(--card-border)] shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-1">
+              <Link
+                to="/settings"
+                onClick={() => setShowMoreMenu(false)}
+                className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-[var(--text-main)] hover:bg-[var(--card-border)]/40 transition scale-tap"
+              >
+                <Settings size={16} className="text-sub" />
+                <span>Settings</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => {
+                  toggleTheme()
+                  setShowMoreMenu(false)
+                }}
+                className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-[var(--text-main)] hover:bg-[var(--card-border)]/40 transition scale-tap cursor-pointer text-left"
+              >
+                {dark ? (
+                  <Sun size={16} className="text-[var(--accent)]" />
+                ) : (
+                  <Moon size={16} className="text-[var(--accent)]" />
+                )}
+                <span>Switch appearance</span>
+              </button>
+
+              <div className="h-px bg-[var(--card-border)] my-1" />
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-red-500 hover:bg-red-500/10 transition scale-tap cursor-pointer text-left"
+              >
+                <LogOut size={16} />
+                <span>Log out</span>
+              </button>
+            </div>
           )}
-          <span>Profile</span>
-        </NavLink>
-
-        {/* More Popover Button */}
-        <button
-          type="button"
-          onClick={() => setShowMoreMenu((prev) => !prev)}
-          className={`flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-xs font-semibold transition scale-tap cursor-pointer ${showMoreMenu
-              ? 'bg-[var(--card-border)]/60 text-[var(--text-main)]'
-              : 'text-sub hover:text-[var(--text-main)] hover:bg-[var(--card-border)]/40'
-            }`}
-        >
-          <Menu size={16} />
-          <span>More</span>
-        </button>
-
-        {/* Floating "More" Menu Popover */}
-        {showMoreMenu && (
-          <div className="absolute bottom-14 left-0 w-64 glass rounded-3xl p-2 border border-[var(--card-border)] shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-1">
-            <Link
-              to="/settings"
-              onClick={() => setShowMoreMenu(false)}
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-[var(--text-main)] hover:bg-[var(--card-border)]/40 transition scale-tap"
-            >
-              <Settings size={16} className="text-sub" />
-              <span>Settings</span>
-            </Link>
-
-            <button
-              type="button"
-              onClick={() => {
-                toggleTheme()
-                setShowMoreMenu(false)
-              }}
-              className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-[var(--text-main)] hover:bg-[var(--card-border)]/40 transition scale-tap cursor-pointer text-left"
-            >
-              {dark ? (
-                <Sun size={16} className="text-[var(--accent)]" />
-              ) : (
-                <Moon size={16} className="text-[var(--accent)]" />
-              )}
-              <span>Switch appearance</span>
-            </button>
-
-            <div className="h-px bg-[var(--card-border)] my-1" />
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-red-500 hover:bg-red-500/10 transition scale-tap cursor-pointer text-left"
-            >
-              <LogOut size={16} />
-              <span>Log out</span>
-            </button>
-          </div>
-        )}
-      </div>
-    </aside>
+        </div>
+      </aside>
+    </div>
   )
 }

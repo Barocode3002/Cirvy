@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
   Home,
   Search,
@@ -17,6 +17,10 @@ export default function NavBar() {
   const { user, profile } = useAuth()
 
   const [unreadCount, setUnreadCount] = useState(0)
+
+  const location = useLocation()
+  // Hide mobile bottom tab bar when inside an individual conversation
+  const isInChat = /^\/messages\/.+/.test(location.pathname)
 
   const currentHandle =
     profile?.username ||
@@ -203,7 +207,7 @@ export default function NavBar() {
     <>
       <nav
         id="bottomNav"
-        className="fixed bottom-0 left-0 right-0 glass border-t border-[var(--card-border)] px-2 py-2 z-30 shadow-lg md:hidden"
+        className={`fixed bottom-0 left-0 right-0 glass border-t border-[var(--card-border)] px-2 py-2 z-30 shadow-lg md:hidden${isInChat ? ' hidden' : ''}`}
         style={{
           paddingBottom:
             'calc(env(safe-area-inset-bottom) + 8px)',

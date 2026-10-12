@@ -1,20 +1,30 @@
 // src/components/CirvyLogo.jsx
-// Plain text wordmark "Cirvy" styled with a gradient fading toward teal accent
+// Official wordmark "Cirvy": Syne font with horizontal gradient (White -> Teal).
 
 export default function CirvyLogo({
-  variant = 'icon', // 'icon' | 'full'
+  variant = 'icon', // 'icon' | 'full' | 'wordmark'
   size,
   className = '',
 }) {
-  const isFull = variant === 'full'
+  const isIcon = variant === 'icon'
+  
+  const style = size ? { fontSize: typeof size === 'number' ? `${size}px` : size } : undefined
+  const baseCls = `font-display font-extrabold tracking-tight select-none inline-flex items-center ${className}`
 
+  // Horizontal gradient: White (left) to Teal (right)
+  const gradientCls = "bg-linear-to-r from-white to-[var(--accent)] bg-clip-text text-transparent"
+
+  if (isIcon) {
+    return (
+      <span className={`${baseCls} text-[var(--accent)]`} style={style}>
+        C
+      </span>
+    )
+  }
+
+  // Full wordmark "Cirvy" with horizontal gradient
   return (
-    <span
-      className={`font-display font-extrabold tracking-tight select-none bg-gradient-to-r from-[#10181C] via-[#2E3B42] to-[var(--accent)] dark:from-white dark:via-[#E4EFF2] dark:to-[var(--accent)] bg-clip-text text-transparent transition-colors inline-flex items-center ${
-        isFull ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl'
-      } ${className}`}
-      style={size ? { fontSize: typeof size === 'number' ? `${size}px` : size } : undefined}
-    >
+    <span className={`${baseCls} ${gradientCls}`} style={style}>
       Cirvy
     </span>
   )

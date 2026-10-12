@@ -1,7 +1,7 @@
 // src/pages/FeedPage.jsx
 // Friends-only Feed view — friends posts + create box at top.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { ShieldCheck, Users, Sparkles, Bell, MessageSquare, Plus } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -12,12 +12,36 @@ import CreatePostBox from '@/components/CreatePostBox'
 import AppShell from '@/components/AppShell'
 import CirvyLogo from '@/components/CirvyLogo'
 
+// Toggle to enable/disable the Stories entry point (disabled = "Coming soon")
+const STORIES_ENABLED = false
+
 export default function FeedPage() {
   const { user } = useAuth()
   const { showToast } = useUI()
 
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showStoryComingSoon, setShowStoryComingSoon] = useState(false)
+  const storyTimeoutRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (storyTimeoutRef.current) {
+        clearTimeout(storyTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const handleDisabledStoryClick = (e) => {
+    e.preventDefault()
+    setShowStoryComingSoon(true)
+    if (storyTimeoutRef.current) {
+      clearTimeout(storyTimeoutRef.current)
+    }
+    storyTimeoutRef.current = setTimeout(() => {
+      setShowStoryComingSoon(false)
+    }, 1800)
+  }
 
   useEffect(() => {
     loadPosts()
@@ -51,9 +75,16 @@ export default function FeedPage() {
         .limit(50)
 
       if (pErr) {
-        rawPosts = []
+        // Fallback without video_url if column does not exist
+        const { data: fallbackPosts } = await supabase
+          .from('posts')
+          .select('id, content, image_url, author_id, created_at')
+          .in('author_id', authorIds)
+          .order('created_at', { ascending: false })
+          .limit(50)
+        rawPosts = fallbackPosts || []
       } else {
-        rawPosts = pData || []
+        rawPosts = (pData || []).filter((p) => !p.is_archived)
       }
     } catch {
       rawPosts = []
@@ -125,10 +156,14 @@ export default function FeedPage() {
           .insert({ author_id: user.id, content: content || '', image_url: imageUrl || videoUrl || null })
           .select('id')
           .single()
-        if (fallbackError) return false
+        if (fallbackError) {
+          showToast('Could not publish your post. Please try again.')
+          return false
+        }
         if (poll && fallbackData?.id) {
           try { await supabase.from('polls').insert({ post_id: fallbackData.id, question: poll.question, options: poll.options }) } catch { /* ignore */ }
         }
+        showToast('Post published to your circle')
         await loadPosts()
         return true
       }
@@ -137,9 +172,11 @@ export default function FeedPage() {
         try { await supabase.from('polls').insert({ post_id: postData.id, question: poll.question, options: poll.options }) } catch { /* ignore */ }
       }
 
+      showToast('Post published to your circle')
       await loadPosts()
       return true
     } catch {
+      showToast('Could not publish your post. Please try again.')
       return false
     }
   }
@@ -188,25 +225,55 @@ export default function FeedPage() {
 
         {/* Stories row: Real functional shortcut linking to Create Post (No decorative fake circles) */}
         <section aria-label="Stories and quick create" className="pt-1">
-          <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-none">
-            <Link
-              to="/create-post"
-              className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
-            >
-              <div className="w-16 h-16 rounded-full border-2 border-[var(--accent)] flex items-center justify-center bg-[var(--card-bg)] shadow-sm group-hover:scale-105 transition-transform scale-tap">
-                <Plus size={24} className="text-[var(--accent)]" />
-              </div>
-              <span className="text-[11px] font-medium text-sub group-hover:text-[var(--text-main)] transition-colors">
-                Your story
-              </span>
-            </Link>
+          <div className="flex items-center gap-4 overflow-x-auto pt-7 pb-2 -mt-6 scrollbar-none">
+            {STORIES_ENABLED ? (
+              <Link
+                to="/create-post"
+                className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
+              >
+                <div className="w-16 h-16 rounded-full border-2 border-[var(--accent)] flex items-center justify-center bg-[var(--card-bg)] shadow-sm group-hover:scale-105 transition-transform scale-tap">
+                  <Plus size={24} className="text-[var(--accent)]" />
+                </div>
+                <span className="text-[11px] font-medium text-sub group-hover:text-[var(--text-main)] transition-colors">
+                  Your story
+                </span>
+              </Link>
+            ) : (
+              <button
+                type="button"
+                aria-disabled="true"
+                aria-label="Story creation coming soon"
+                title="Story creation coming soon"
+                onClick={handleDisabledStoryClick}
+                className="relative flex flex-col items-center gap-1.5 shrink-0 group cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--card-border)] rounded-2xl"
+              >
+                {/* Coming soon tooltip / pill */}
+                <span
+                  role="status"
+                  className={`absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none z-30 px-2.5 py-0.5 text-[10px] font-medium rounded-full bg-[var(--card-bg)] text-sub border border-[var(--card-border)] shadow-sm transition-all duration-150 ${
+                    showStoryComingSoon
+                      ? 'opacity-100 scale-100'
+                      : 'opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 group-focus-visible:opacity-100 group-focus-visible:scale-100'
+                  }`}
+                >
+                  Coming soon
+                </span>
+
+                <div className="w-16 h-16 rounded-full border-2 border-[var(--card-border)] flex items-center justify-center bg-[var(--card-bg)] shadow-sm opacity-60">
+                  <Plus size={24} className="text-sub" />
+                </div>
+                <span className="text-[11px] font-medium text-sub opacity-60">
+                  Your story
+                </span>
+              </button>
+            )}
           </div>
         </section>
 
         {/* Desktop Composer box */}
-        <div className="hidden md:block">
+        {/* <div className="hidden md:block">
           <CreatePostBox onCreate={handleCreatePost} currentUser={user} />
-        </div>
+        </div> */}
 
         {/* Feed List */}
         {loading ? (

@@ -203,20 +203,44 @@ export default function ProfilePage() {
 
       // Posts visible to friends only
       if (isFr || isOwn) {
-        let query = supabase
-          .from('posts')
-          .select(
-            'id, content, image_url, video_url, author_id, is_archived, created_at'
-          )
-          .eq('author_id', targetId)
-          .order('created_at', { ascending: false })
-          .limit(40)
+        let userPosts = []
+        try {
+          let query = supabase
+            .from('posts')
+            .select(
+              'id, content, image_url, video_url, author_id, is_archived, created_at'
+            )
+            .eq('author_id', targetId)
+            .order('created_at', { ascending: false })
+            .limit(40)
 
-        if (!isOwn) {
-          query = query.eq('is_archived', false)
+          if (!isOwn) {
+            query = query.eq('is_archived', false)
+          }
+
+          const { data, error } = await query
+          if (error) {
+            // Fallback without video_url if column does not exist in live database
+            let fallbackQuery = supabase
+              .from('posts')
+              .select(
+                'id, content, image_url, author_id, is_archived, created_at'
+              )
+              .eq('author_id', targetId)
+              .order('created_at', { ascending: false })
+              .limit(40)
+
+            if (!isOwn) {
+              fallbackQuery = fallbackQuery.eq('is_archived', false)
+            }
+            const { data: fallbackData } = await fallbackQuery
+            userPosts = fallbackData || []
+          } else {
+            userPosts = data || []
+          }
+        } catch {
+          userPosts = []
         }
-
-        const { data: userPosts } = await query
 
         const postIds = (userPosts || []).map((p) => p.id)
         let pollsMap = new Map()

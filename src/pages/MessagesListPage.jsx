@@ -9,6 +9,7 @@ import {
 
 import { supabase, teardownChannel } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useUI } from '@/contexts/UIContext'
 import {
   ensureUserKeys,
   getSharedKey,
@@ -16,8 +17,56 @@ import {
 } from '@/lib/e2ee'
 import AppShell from '@/components/AppShell'
 
+function getMessagePreview(decryptedText, messageType, isMe) {
+  if (!decryptedText || typeof decryptedText !== 'string') {
+    return isMe ? 'You sent a message' : 'Sent you a message'
+  }
+
+  try {
+    const parsed = JSON.parse(decryptedText)
+
+    if (parsed.type === 'shared_post') {
+      return isMe ? 'You sent a post' : 'Sent you a post'
+    }
+
+    if (parsed.media) {
+      const media = parsed.media
+      if (media.type === 'image' || media.type === 'video') {
+        const label = media.type === 'image' ? 'photo' : 'video'
+        return isMe ? `You sent a ${label}` : `Sent you a ${label}`
+      }
+    }
+
+    if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 1) {
+      return isMe ? `You sent ${parsed.items.length} attachments` : `Sent you ${parsed.items.length} attachments`
+    }
+
+    if (parsed.items && Array.isArray(parsed.items) && parsed.items.length === 1) {
+      const item = parsed.items[0]
+      if (item.type === 'image') return isMe ? 'You sent a photo' : 'Sent you a photo'
+      if (item.type === 'video') return isMe ? 'You sent a video' : 'Sent you a video'
+    }
+  } catch {
+  }
+
+  if (messageType === 'voice') {
+    return isMe ? 'You sent a voice message' : 'Sent you a voice message'
+  }
+
+  if (messageType === 'text' && decryptedText.startsWith('http')) {
+    return isMe ? 'You sent a link' : 'Sent you a link'
+  }
+
+  if (decryptedText.length > 50) {
+    return decryptedText.slice(0, 50) + '…'
+  }
+
+  return decryptedText || (isMe ? 'You sent a message' : 'Sent you a message')
+}
+
 export default function MessagesListPage({ isEmbedded = false, selectedChatId = null, onSelectChat = null }) {
   const { user } = useAuth()
+  const { dark } = useUI()
   const navigate = useNavigate()
 
   const [conversations, setConversations] = useState([])
@@ -26,7 +75,7 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
 
   const userId = user?.id
 
-  const loadConversations = useCallback(async () => {
+  const loadConversations = useCallback(async (isInitial = false) => {
     if (!userId) {
       setConversations([])
       setLoading(false)
@@ -34,7 +83,9 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
     }
 
     try {
-      setLoading(true)
+      if (isInitial) {
+        setLoading(true)
+      }
 
       const [
         { data: sentMessages, error: sentError },
@@ -206,9 +257,14 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
           const publicKey = keyMap.get(partnerId)
 
           let preview = 'Encrypted message'
+          const isMe = message.sender_id === userId
 
-          if (message.message_type === 'voice') {
-            preview = '🎤 Voice message'
+          if (message.reactions && Object.keys(message.reactions).length > 0) {
+            const emojis = Object.keys(message.reactions)
+            const lastEmoji = emojis[emojis.length - 1]
+            preview = `Reacted ${lastEmoji} to your message`
+          } else if (message.message_type === 'voice') {
+            preview = isMe ? 'You sent a voice message' : 'Sent you a voice message'
           } else if (
             privateKey &&
             publicKey &&
@@ -223,11 +279,12 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
               )
 
               if (sharedKey) {
-                preview = await decryptMessage(
+                const decrypted = await decryptMessage(
                   sharedKey,
                   message.ciphertext,
                   message.iv
                 )
+                preview = getMessagePreview(decrypted, message.message_type, isMe)
               }
             } catch (error) {
               console.warn(
@@ -235,8 +292,10 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
                 error
               )
 
-              preview = 'Encrypted message'
+              preview = isMe ? 'You sent a message' : 'Sent you a message'
             }
+          } else {
+            preview = isMe ? 'You sent a message' : 'Sent you a message'
           }
 
           return {
@@ -274,7 +333,10 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
   }, [userId])
 
   useEffect(() => {
-    if (!userId) return undefined
+    if (!userId) {
+      setLoading(false)
+      return undefined
+    }
 
     let mounted = true
     let channel = null
@@ -290,9 +352,9 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
 
       reloadTimer = setTimeout(() => {
         if (mounted) {
-          loadConversations()
+          loadConversations(false)
         }
-      }, 150)
+      }, 300)
     }
 
     const startFallbackPolling = () => {
@@ -300,12 +362,12 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
 
       pollingInterval = setInterval(() => {
         if (mounted) {
-          loadConversations()
+          loadConversations(false)
         }
       }, 5000)
     }
 
-    loadConversations().then(() => {
+    loadConversations(true).then(() => {
       if (!mounted) return
 
       try {
@@ -422,29 +484,29 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
   }
 
   const content = (
-    <div className="min-w-0 w-full">
-      <div className="mx-auto w-full max-w-2xl px-4 py-6">
+    <div className="min-w-0 w-full h-full flex flex-col bg-[var(--card-bg)] text-[var(--text-main)]">
+      <div className="px-4 py-4 border-b border-[var(--card-border)] flex-shrink-0">
 
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-display font-extrabold tracking-tight text-[var(--text-main)]">
+            <h1 className="text-2xl font-display font-extrabold tracking-tight text-[var(--text-main)]">
               Messages
             </h1>
 
-            <p className="mt-1 text-sm opacity-60">
+            <p className="mt-0.5 text-xs text-sub">
               Your conversations
             </p>
           </div>
 
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-            <MessageCircle size={21} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full accent-soft-bg text-[var(--accent)] border border-[var(--card-border)]">
+            <MessageCircle size={20} />
           </div>
         </div>
 
-        <div className="relative mb-5">
+        <div className="relative">
           <Search
-            size={18}
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 opacity-50"
+            size={16}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sub"
           />
 
           <input
@@ -454,36 +516,38 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
               setSearch(event.target.value)
             }
             placeholder="Search conversations..."
-            className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 outline-none transition focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:focus:border-slate-500"
+            className="w-full rounded-2xl bg-[var(--bg)] border border-[var(--card-border)] text-[var(--text-main)] placeholder:text-sub py-2.5 pl-10 pr-4 text-xs outline-none transition focus:border-[var(--accent)]"
           />
         </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
 
         {loading && (
           <div className="flex items-center justify-center py-16">
             <Loader2
-              size={25}
-              className="animate-spin opacity-60"
+              size={24}
+              className="animate-spin text-[var(--accent)]"
             />
           </div>
         )}
 
         {!loading &&
           filteredConversations.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+            <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full accent-soft-bg text-[var(--accent)]">
                 <MessageCircle
-                  size={28}
-                  className="opacity-50"
+                  size={24}
                 />
               </div>
 
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-base font-display font-bold text-[var(--text-main)]">
                 {search
                   ? 'No conversations found'
                   : 'No messages yet'}
               </h2>
 
-              <p className="mt-1 max-w-xs text-sm opacity-60">
+              <p className="mt-1 max-w-xs text-xs text-sub font-body">
                 {search
                   ? 'Try another name or username.'
                   : 'Start a conversation with one of your friends.'}
@@ -493,7 +557,7 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
 
         {!loading &&
           filteredConversations.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-1 px-2.5 py-3">
               {filteredConversations.map(
                 (conversation) => {
                   const profile =
@@ -520,10 +584,10 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
                           conversation.partnerId
                         )
                       }
-                      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99] ${
+                      className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition active:scale-[0.99] cursor-pointer ${
                         isActive
-                          ? 'border-[var(--accent)] bg-[var(--accent)]/15 dark:bg-[var(--accent)]/20 shadow-sm'
-                          : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800'
+                          ? 'border border-[var(--accent)] bg-[var(--accent)]/10 shadow-sm'
+                          : 'border border-transparent hover:bg-[var(--card-border)]/40'
                       }`}
                     >
                       <div className="relative shrink-0">
@@ -531,10 +595,10 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
                           <img
                             src={profile.avatar_url}
                             alt={displayName}
-                            className="h-14 w-14 rounded-full object-cover"
+                            className="h-11 w-11 rounded-full object-cover ring-1 ring-[var(--card-border)]"
                           />
                         ) : (
-                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-200 text-lg font-semibold dark:bg-slate-700">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-full accent-soft-bg text-sm font-bold font-display text-[var(--accent)]">
                             {displayName
                               .charAt(0)
                               .toUpperCase()}
@@ -543,34 +607,34 @@ export default function MessagesListPage({ isEmbedded = false, selectedChatId = 
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <h3 className="truncate font-semibold">
+                            <h3 className="truncate font-display font-semibold text-xs text-[var(--text-main)]">
                               {displayName}
                             </h3>
 
                             {username && (
-                              <p className="truncate text-xs opacity-50">
+                              <p className="truncate text-[11px] text-sub">
                                 {username}
                               </p>
                             )}
                           </div>
 
-                          <span className="shrink-0 text-xs opacity-50">
+                          <span className="shrink-0 text-[10px] text-sub">
                             {formatTime(
                               conversation.created_at
                             )}
                           </span>
                         </div>
 
-                        <p className="mt-1 truncate text-sm opacity-60">
+                        <p className="mt-1 truncate text-xs text-sub font-body">
                           {conversation.preview}
                         </p>
                       </div>
 
                       <ChevronRight
                         size={18}
-                        className="shrink-0 opacity-30"
+                        className="shrink-0 opacity-30 text-gray-400 dark:text-gray-500"
                       />
                     </button>
                   )

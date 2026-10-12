@@ -11,6 +11,7 @@ import MessagesPage from '@/pages/MessagesPage'
 import CreatePostPage from '@/pages/CreatePostPage'
 import NotificationsPage from '@/pages/NotificationsPage'
 import SettingsPage from '@/pages/SettingsPage'
+import PostDetailPage from '@/pages/PostDetailPage'
 
 // Redirect /chat/:friendId → /messages/:friendId using the actual param value.
 function ChatRedirect() {
@@ -138,11 +139,19 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route 
+        <Route
           path="/chat/:friendId"
           element={
             <ProtectedRoute>
               <ChatRedirect />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/post/:postId"
+          element={
+            <ProtectedRoute>
+              <PostDetailPage />
             </ProtectedRoute>
           }
         />

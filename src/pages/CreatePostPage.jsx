@@ -30,6 +30,8 @@ export default function CreatePostPage() {
         .select('id')
         .single()
 
+      let createdPostId = postData?.id
+
       if (postError) {
         // If video_url column is not yet in remote DB, fallback to image_url or content
         const { data: fallbackData, error: fallbackError } = await supabase
@@ -46,14 +48,14 @@ export default function CreatePostPage() {
           showToast('Could not publish your post. Please try again.')
           return false
         }
-        postData.id = fallbackData.id
+        createdPostId = fallbackData?.id
       }
 
       // 2. If poll data attached, insert into polls table
-      if (poll && postData?.id) {
+      if (poll && createdPostId) {
         try {
           await supabase.from('polls').insert({
-            post_id: postData.id,
+            post_id: createdPostId,
             question: poll.question,
             options: poll.options,
           })

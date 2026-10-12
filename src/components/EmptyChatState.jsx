@@ -1,8 +1,10 @@
 import { Send } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useUI } from '@/contexts/UIContext'
 
 export default function EmptyChatState() {
   const navigate = useNavigate()
+  const { dark } = useUI()
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[var(--bg)]">
@@ -15,7 +17,7 @@ export default function EmptyChatState() {
       </h2>
 
       <p className="text-xs text-sub max-w-xs font-body mb-6 leading-relaxed">
-        Send private photos and messages to a friend or group.
+        Send end-to-end encrypted messages and photos to your friends.
       </p>
 
       <button

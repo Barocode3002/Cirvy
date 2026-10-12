@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useUI } from '@/contexts/UIContext'
 import { Heart, MessageSquare, Send, MoreHorizontal, EyeOff, Shield, Trash2, Edit3, BarChart2, CheckCircle2, Share2 } from 'lucide-react'
+import SharePostModal from './SharePostModal'
 
 export default function PostCard({ post, currentUserId, onPostUpdated }) {
   const { t, showToast } = useUI()
@@ -28,6 +29,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
   const [showMenu, setShowMenu] = useState(false)
   const [showAudienceModal, setShowAudienceModal] = useState(false)
   const [audienceChoice, setAudienceChoice] = useState('approved')
+  const [showShareModal, setShowShareModal] = useState(false)
 
   // ---- Edit mode ----
   const [editing, setEditing] = useState(false)
@@ -419,17 +421,7 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
             </button>
 
             <button
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: 'Cirvy Post',
-                    text: post.content,
-                    url: window.location.href,
-                  })
-                } else {
-                  showToast('Link copied to clipboard')
-                }
-              }}
+              onClick={() => setShowShareModal(true)}
               className="flex items-center gap-2 text-xs font-semibold text-sub hover:text-[var(--text-main)] transition scale-tap cursor-pointer"
               aria-label="Share post"
             >
@@ -617,6 +609,14 @@ export default function PostCard({ post, currentUserId, onPostUpdated }) {
           </div>
         </div>
       )}
+
+      {/* ============ MODAL: SHARE POST ============ */}
+      <SharePostModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        post={post}
+        currentUserId={currentUserId}
+      />
     </>
   )
 }
